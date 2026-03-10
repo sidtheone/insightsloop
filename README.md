@@ -32,7 +32,7 @@ Every step has a persona. These aren't decoration — they define how each agent
    - **The Monkey**: Launches as a real agent at every step. Structured output. Specific chaos.
    - **Done**: Summary + suggest `/retro`
 
-3. **`/devloopfast`** — Speed mode. Same crew, same Monkey. Auto-triages small/medium (no approval gate), confidence-filters all findings at 80+ (Storm, Cartographer, and Monkey). Below-threshold findings saved to `.loop/filtered-findings.json`, never discarded. The Monkey still launches at every step — she just doesn't block.
+3. **`/devloopfast`** — Speed mode. Same crew, same Monkey. Auto-triages small/medium (no approval gate), confidence-filters all findings at 80+ (Storm, Cartographer, and Monkey). Below-threshold findings saved to `.insightsLoop/filtered-findings.json`, never discarded. The Monkey still launches at every step — she just doesn't block.
 
 4. **`/monkey`** — The Monkey, standalone. Point her at a file, a plan, a diff, or a decision. She picks one technique from her arsenal, applies it with specificity, and produces a structured finding. Not a reviewer — a disruptor.
 
@@ -62,7 +62,7 @@ She picks the technique that would hurt most at each step. She produces structur
 - **Each Shipwright works in an isolated worktree.** Clean context per agent.
 - **The Sentinel never reads the Challenge section.** Independent failure mode derivation.
 - **Values are pasted into agent briefs.** Not "read VALUES.md" — actually paste the content so subagents have it in context.
-- **All artifacts live in `.loop/`.** Cleaned between runs. No stale data.
+- **All artifacts live in `.insightsLoop/`.** Cleaned between runs. No stale data.
 - **Plan is a hard gate.** No plan = no build. Non-negotiable.
 - **Each step produces an artifact consumed by the next.** Pipeline, not ceremony.
 - **The Cartographer's empty map is valid.** No hallucinated findings.
@@ -77,7 +77,7 @@ plan.md → frame.md → test suite → worktrees → storm-report.json + edge-c
             monkey-frame.json    monkey-tdd.json   monkey-build.json   monkey-ship.json
 ```
 
-All artifacts in `.loop/`. Retro reads all of them.
+All artifacts in `.insightsLoop/`. Retro reads all of them.
 
 ## Install
 

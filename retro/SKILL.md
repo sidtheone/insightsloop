@@ -22,7 +22,7 @@ Before starting, check the repo root for `VALUES.md` and `TDD-MATRIX.md`. If the
 
 ### 1. Gather Context
 
-Read from `.loop/` directory:
+Read from `.insightsLoop/` directory:
 - `plan.md` — what was intended and what risks were identified
 - `frame.md` — triage decision and parallelization plan
 - `storm-report.json` — what The Storm found (if it exists)

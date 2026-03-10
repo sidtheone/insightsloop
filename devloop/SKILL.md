@@ -32,10 +32,10 @@ How to brief agents with values:
 
 ## Artifact Directory
 
-All build artifacts go in `.loop/` at the repo root. Create it if it doesn't exist:
+All build artifacts go in `.insightsLoop/` at the repo root. Create it if it doesn't exist:
 
 ```
-.loop/
+.insightsLoop/
 ├── plan.md              (from /plan, input)
 ├── frame.md             (from Frame)
 ├── monkey-frame.json    (from Monkey at Frame)
@@ -47,11 +47,11 @@ All build artifacts go in `.loop/` at the repo root. Create it if it doesn't exi
 └── normalization.md     (from Editor)
 ```
 
-Before starting a new run, archive or delete the previous `.loop/` contents. Stale artifacts from previous builds must not pollute the current run.
+Before starting a new run, archive or delete the previous `.insightsLoop/` contents. Stale artifacts from previous builds must not pollute the current run.
 
 ## Prerequisites
 
-This skill expects `plan.md` (with a `## Challenge` section) — either in `.loop/` or the repo root. If it doesn't exist, **do not proceed**. Tell the user to run `/plan` first. This is a hard gate — the entire downstream chain runs on thin air without a plan.
+This skill expects `plan.md` (with a `## Challenge` section) — either in `.insightsLoop/` or the repo root. If it doesn't exist, **do not proceed**. Tell the user to run `/plan` first. This is a hard gate — the entire downstream chain runs on thin air without a plan.
 
 ## Definitions
 
@@ -70,7 +70,7 @@ Read `plan.md`. Confirm the triage label from the `## Challenge` section:
 | Medium | Multi-file, existing patterns | All steps |
 | Architectural | New interfaces, schema changes, public API | All steps, sequential challenge |
 
-**Output artifact**: `.loop/frame.md` — confirmed triage label, task list with parallelization plan (which tasks share a worktree, which are independent), and which test files belong to which Shipwright.
+**Output artifact**: `.insightsLoop/frame.md` — confirmed triage label, task list with parallelization plan (which tasks share a worktree, which are independent), and which test files belong to which Shipwright.
 
 Present to user. Wait for approval.
 
@@ -80,9 +80,9 @@ Launch the Monkey agent with:
 - Context: the plan.md content and the frame.md you just produced
 - Step: "frame"
 
-Brief: "You are The Monkey. Read `.loop/plan.md` and `.loop/frame.md`. Read `VALUES.md` if it exists. Pick one technique from your arsenal and challenge the triage decision or scope boundaries. Produce one structured JSON finding."
+Brief: "You are The Monkey. Read `.insightsLoop/plan.md` and `.insightsLoop/frame.md`. Read `VALUES.md` if it exists. Pick one technique from your arsenal and challenge the triage decision or scope boundaries. Produce one structured JSON finding."
 
-Output: `.loop/monkey-frame.json`
+Output: `.insightsLoop/monkey-frame.json`
 
 Present the Monkey's finding to the user alongside the frame. If `survived: false`, discuss before proceeding.
 
@@ -114,7 +114,7 @@ Launch the Monkey agent with:
 
 Brief: "You are The Monkey. Read the test suite the Sentinel just wrote and the plan. Read `VALUES.md` if it exists. Pick one technique — probably Hostile Input or Requirement Inversion — and find the test suite's blind spot. Produce one structured JSON finding."
 
-Output: `.loop/monkey-tdd.json`
+Output: `.insightsLoop/monkey-tdd.json`
 
 If `survived: false` and the finding is specific enough to act on, add the test. If `survived: true`, move on. Present the finding to the user either way.
 
@@ -140,7 +140,7 @@ Launch the Monkey agent with:
 
 Brief: "You are The Monkey. Read what each Shipwright built. Read `VALUES.md` if it exists. Pick one technique — probably Cross-Seam Probe — and find where two worktrees made different assumptions about a shared concept. Produce one structured JSON finding."
 
-Output: `.loop/monkey-build.json`
+Output: `.insightsLoop/monkey-build.json`
 
 If `survived: false`, investigate the seam before merging. If `survived: true`, proceed to merge.
 
@@ -172,7 +172,7 @@ Brief: "You are The Editor. One word, one meaning, no exceptions. Read the merge
 
 [PASTE KEY VALUES on naming if they exist]"
 
-**Output**: `.loop/normalization.md` — list of inconsistencies with recommended fixes, or "Clean — no inconsistencies found."
+**Output**: `.insightsLoop/normalization.md` — list of inconsistencies with recommended fixes, or "Clean — no inconsistencies found."
 
 Apply normalization fixes before verification.
 
@@ -186,14 +186,14 @@ Brief: "You are The Storm. You find the leak before the sea does. You don't care
 
 [PASTE KEY VALUES so you can check code against them]"
 
-Output: `.loop/storm-report.json` — structured JSON array:
+Output: `.insightsLoop/storm-report.json` — structured JSON array:
 ```json
 [{"location": "", "issue": "", "severity": "critical|high|medium|low", "suggestion": ""}]
 ```
 
 **The Cartographer — Edge Case Hunter (Sonnet)** — invoke `/edge-case-hunter`:
 - Exhaustive path enumeration on the diff
-- Output: `.loop/edge-cases.json` — structured JSON array:
+- Output: `.insightsLoop/edge-cases.json` — structured JSON array:
 ```json
 [{"location": "", "trigger_condition": "", "guard_snippet": "", "potential_consequence": ""}]
 ```
@@ -207,7 +207,7 @@ Launch the Monkey agent with:
 
 Brief: "You are The Monkey. Read the merged diff, the Storm's report, and the Cartographer's map. Read `VALUES.md` if it exists. Pick one technique — probably Time Travel or Scale Shift — and find the operational edge case that works in tests but fails at 3am. Produce one structured JSON finding."
 
-Output: `.loop/monkey-ship.json`
+Output: `.insightsLoop/monkey-ship.json`
 
 If `survived: false` and confidence is high, treat it like a Storm finding and fix it. Present all Monkey findings to the user regardless.
 
@@ -269,5 +269,5 @@ When things go wrong:
 - **Human approves at Frame.** Don't start building without explicit go-ahead.
 - **Plan is a hard gate.** No plan.md = no build. Non-negotiable.
 - **Paste values into briefs.** "Read VALUES.md" is not enough for subagents. Paste the relevant content into each brief so it's in their context.
-- **Clean .loop/ between runs.** Stale artifacts are silent poison.
+- **Clean .insightsLoop/ between runs.** Stale artifacts are silent poison.
 - **Stop condition for findings.** Fix critical and high severity from Storm. Fix data-corruption and crash findings from Cartographer. Fix `survived: false` high-confidence Monkey findings. The rest goes to backlog.
