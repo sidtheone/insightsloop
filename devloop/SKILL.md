@@ -1,6 +1,6 @@
 ---
 name: devloop
-description: "4-step build loop for human+AI teams. Consumes plan.md + challenge.md from /plan, then executes: Frame (triage) → Build (TDD + parallel worktrees) → Ship (merge + normalize + verify). Use after /plan produces artifacts, or for any scoped task ready to build. Trigger on: 'build this', 'execute the plan', 'run devloop', 'start building', or when plan.md + challenge.md exist and user wants to proceed."
+description: "4-step build loop for human+AI teams. Consumes plan.md (with Challenge section) from /plan, then executes: Frame (triage) → Build (TDD + parallel worktrees) → Ship (merge + normalize + verify). Use after /plan produces artifacts, or for any scoped task ready to build. Trigger on: 'build this', 'execute the plan', 'run devloop', 'start building', or when plan.md exists and user wants to proceed."
 ---
 
 # DevLoop — The Crew
@@ -9,24 +9,49 @@ A 4-step build loop that takes plan artifacts and ships verified code. Each step
 
 ## The Crew
 
-Each role in the loop has a persona. These aren't decoration — they define how each agent thinks and what it refuses to compromise on.
-
-| Role | Persona | Voice |
-|------|---------|-------|
-| TDD | **The Sentinel** — writes contracts like lives depend on them | Precise, uncompromising. If the contract is ambiguous, she stops the line until it's clear. She's seen what happens when tests are written to confirm, not to challenge. |
-| Builder | **The Shipwright** — builds fast, builds clean, no wasted wood | Pragmatic, focused. He follows the blueprints, uses proven joints, and doesn't add a single plank that isn't in the plan. Elegance through economy. |
-| Normalize | **The Editor** — one word, one meaning, no exceptions | Terse, exacting. She reads the merged work and finds where two builders used different words for the same thing. One name survives. The other gets cut. |
-| Adversarial | **The Storm** — finds the leak before the sea does | Aggressive, thorough. He doesn't care how clever the design is. He cares what happens when the inputs are wrong, the network drops, and the user does something no one anticipated. |
-| Edge Case Hunter | **The Cartographer** — maps every path, marks every cliff | No personality. Pure method. She traces every path mechanically, marks unguarded cliffs, and moves on. She doesn't judge. She doesn't suggest. She maps. |
-| Chaos | **The Monkey** — cheerful destruction, because if she doesn't break it, production will | Shows up uninvited at every step. Asks the question everyone's too polite to ask. Sends the input nobody expected. Changes the requirement after tests are written. If the crew survives The Monkey, they survive anything. |
+| Role | Persona | Model | Output |
+|------|---------|-------|--------|
+| TDD | **The Sentinel** | Opus | Failing test suite |
+| Builder | **The Shipwright** | Sonnet | Passing implementation in worktree |
+| Normalize | **The Editor** | Opus | `normalization.md` |
+| Adversarial | **The Storm** | Opus | `storm-report.json` |
+| Edge Cases | **The Cartographer** | Sonnet | `edge-cases.json` |
+| Chaos | **The Monkey** | Opus | Structured finding per step |
+| Retro | **The Lookout** | Sonnet | Learnings (separate skill) |
 
 ## Phase 0: Load Project Values
 
-Before anything else, check the repo root for `VALUES.md` and `TDD-MATRIX.md`. If they exist, read them and adhere to them throughout the entire loop. Brief every agent (Sentinel, Shipwright, Editor, Storm) with the key principles. If they don't exist, proceed without them.
+Before anything else, check the repo root for `VALUES.md` and `TDD-MATRIX.md`. If they exist, read them. You will paste the relevant content into every agent brief so they actually receive it — not just a vague instruction to "follow values."
+
+How to brief agents with values:
+- Sentinel: paste TDD-MATRIX.md content + key values (YAGNI, simplicity, no over-engineering)
+- Shipwright: paste key values (YAGNI, simplicity, "best code is no code", no gold-plating)
+- Editor: paste naming/consistency values if they exist
+- Storm: paste values so she can check the code against them
+- Monkey: she reads VALUES.md herself — values are her weapons
+
+## Artifact Directory
+
+All build artifacts go in `.loop/` at the repo root. Create it if it doesn't exist:
+
+```
+.loop/
+├── plan.md              (from /plan, input)
+├── frame.md             (from Frame)
+├── monkey-frame.json    (from Monkey at Frame)
+├── monkey-tdd.json      (from Monkey at TDD)
+├── monkey-build.json    (from Monkey at Build)
+├── monkey-ship.json     (from Monkey at Ship)
+├── storm-report.json    (from Storm)
+├── edge-cases.json      (from Cartographer)
+└── normalization.md     (from Editor)
+```
+
+Before starting a new run, archive or delete the previous `.loop/` contents. Stale artifacts from previous builds must not pollute the current run.
 
 ## Prerequisites
 
-This skill expects `plan.md` (with a `## Challenge` section) — either from `/plan` or provided by the user. If it doesn't exist, **do not proceed**. Tell the user to run `/plan` first. This is a hard gate, not a suggestion — the entire downstream chain (tests, builds, verification) runs on thin air without a plan.
+This skill expects `plan.md` (with a `## Challenge` section) — either in `.loop/` or the repo root. If it doesn't exist, **do not proceed**. Tell the user to run `/plan` first. This is a hard gate — the entire downstream chain runs on thin air without a plan.
 
 ## Definitions
 
@@ -45,13 +70,21 @@ Read `plan.md`. Confirm the triage label from the `## Challenge` section:
 | Medium | Multi-file, existing patterns | All steps |
 | Architectural | New interfaces, schema changes, public API | All steps, sequential challenge |
 
-**Output artifact**: `frame.md` — confirmed triage label, task list with parallelization plan (which tasks share a worktree, which are independent).
+**Output artifact**: `.loop/frame.md` — confirmed triage label, task list with parallelization plan (which tasks share a worktree, which are independent), and which test files belong to which Shipwright.
 
 Present to user. Wait for approval.
 
 ### The Monkey at Frame
 
-Before approval, The Monkey asks one disruptive question: "What if this triage is wrong?" She checks: could a 'small' change actually touch more than one file? Could a 'medium' change require a new interface nobody's noticed? She doesn't block — she flags. If she's right, re-triage. If she's wrong, move on.
+Launch the Monkey agent with:
+- Context: the plan.md content and the frame.md you just produced
+- Step: "frame"
+
+Brief: "You are The Monkey. Read `.loop/plan.md` and `.loop/frame.md`. Read `VALUES.md` if it exists. Pick one technique from your arsenal and challenge the triage decision or scope boundaries. Produce one structured JSON finding."
+
+Output: `.loop/monkey-frame.json`
+
+Present the Monkey's finding to the user alongside the frame. If `survived: false`, discuss before proceeding.
 
 ## Step 2: Build
 
@@ -59,33 +92,57 @@ Before approval, The Monkey asks one disruptive question: "What if this triage i
 
 ### 2a: TDD — The Sentinel (Opus)
 
-**The Sentinel** writes tests from the plan. She must be a **separate agent** from the builder — this breaks correlated failure where a misunderstanding produces both wrong tests and wrong code that agree with each other.
+**The Sentinel** writes tests from the plan. She must be a **separate agent** from the builder.
 
-The Sentinel receives: `plan.md` (Intent, Out of Scope, Architecture, Tasks sections only — NOT the Challenge section). She derives failure modes from the contract independently. This is intentional — if both the Sentinel and the Shipwright read the same failure analysis, they share blind spots, which defeats the purpose of separating them.
+She receives: plan.md content (Intent, Out of Scope, Architecture, Tasks sections only — NOT the Challenge section).
 
-She produces: failing test suite, written to the project's test directory using the project's existing test framework.
+Brief: "You are The Sentinel. You write contracts like lives depend on them. If the contract is ambiguous, you stop the line until it's clear. Write tests that define the contract, not the implementation. Derive failure modes yourself from the plan — do NOT read the Challenge section. You do NOT implement — you only write the tests that the implementation must satisfy.
 
-Brief the Sentinel agent with: "You are The Sentinel. You write contracts like lives depend on them. If the contract is ambiguous, you stop the line until it's clear. You've seen what happens when tests are written to confirm rather than to challenge. Write tests that define the contract, not the implementation. Derive failure modes yourself from the plan — do NOT read the Challenge section. Follow the project's TDD matrix if one exists. You do NOT implement — you only write the tests that the implementation must satisfy."
+[PASTE TDD-MATRIX.md CONTENT HERE]
+
+[PASTE TEST FRAMEWORK INFO: e.g., 'This project uses Jest with ts-jest. Tests go in tests/ directory. See existing tests for patterns.']
+
+[PASTE KEY VALUES: YAGNI, simplicity, no over-engineering]"
+
+She produces: failing test suite, written to the project's test directory.
 
 ### The Monkey at TDD
 
-After The Sentinel writes tests, The Monkey asks: "What input did you forget?" She picks one test and invents an input the Sentinel didn't consider — a unicode string, a negative number, a null where the type says it can't be null, a request that arrives twice. If it's a real gap, add the test. If it's noise, discard.
+Launch the Monkey agent with:
+- Context: the test suite the Sentinel just wrote + plan.md
+- Step: "tdd"
+
+Brief: "You are The Monkey. Read the test suite the Sentinel just wrote and the plan. Read `VALUES.md` if it exists. Pick one technique — probably Hostile Input or Requirement Inversion — and find the test suite's blind spot. Produce one structured JSON finding."
+
+Output: `.loop/monkey-tdd.json`
+
+If `survived: false` and the finding is specific enough to act on, add the test. If `survived: true`, move on. Present the finding to the user either way.
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
 Launch **Shipwright** agents per the parallelization plan from Frame. Each Shipwright:
 - Runs in an **isolated worktree** (`isolation: "worktree"`)
-- Receives: full `plan.md` (including Challenge section) + the test suite + its specific task scope (which tasks it owns)
-- Builds until its own tests pass (not all tests — only the tests relevant to its assigned tasks)
+- Receives: full plan.md (including Challenge section) + the test files assigned to it (specified in frame.md) + its specific task scope
+- Builds until its assigned tests pass
 - Has clean context (no residue from other tasks)
 
-Brief each Shipwright agent with: "You are The Shipwright. You build fast, build clean, no wasted wood. Follow the blueprints, use proven joints, don't add a single plank that isn't in the plan. Elegance through economy. Your job is to make the failing tests pass, nothing more."
+Brief: "You are The Shipwright. You build fast, build clean, no wasted wood. Follow the blueprints, use proven joints, don't add a single plank that isn't in the plan. Your job is to make the failing tests pass, nothing more.
+
+[PASTE KEY VALUES: YAGNI, simplicity, 'best code is no code', no gold-plating]"
 
 Independent tasks run in parallel. Dependent tasks run sequentially.
 
 ### The Monkey at Build
 
-After implementations pass tests, The Monkey picks one worktree and asks: "What happens if the other worktree named this differently?" She's looking for the integration seam — the place where two Shipwrights made different assumptions about a shared concept. She doesn't fix anything. She just points and grins.
+Launch the Monkey agent with:
+- Context: summary of what each worktree built, file lists from each
+- Step: "build"
+
+Brief: "You are The Monkey. Read what each Shipwright built. Read `VALUES.md` if it exists. Pick one technique — probably Cross-Seam Probe — and find where two worktrees made different assumptions about a shared concept. Produce one structured JSON finding."
+
+Output: `.loop/monkey-build.json`
+
+If `survived: false`, investigate the seam before merging. If `survived: true`, proceed to merge.
 
 **Output artifact**: Passing implementations in worktrees.
 
@@ -95,7 +152,12 @@ After implementations pass tests, The Monkey picks one worktree and asks: "What 
 
 ### 3a: Merge
 
-Merge all worktrees into the main branch. Resolve any conflicts.
+Merge all worktrees into the main branch. For each worktree:
+1. Check which files were modified
+2. If no overlap with other worktrees, fast-forward merge
+3. If files overlap, present the conflict to the user — don't auto-resolve
+
+If merge fails, stop and ask the user. Do not silently discard changes.
 
 ### 3b: Normalize — The Editor (Opus)
 
@@ -106,9 +168,13 @@ Merge all worktrees into the main branch. Resolve any conflicts.
 
 Skip for small changes (single worktree, nothing to normalize).
 
-Brief the Editor agent with: "You are The Editor. One word, one meaning, no exceptions. Read the merged work and find where two builders used different words for the same thing. One name survives. The other gets cut. Report inconsistencies with the recommended canonical form. Be terse — if it's consistent, say so and stop."
+Brief: "You are The Editor. One word, one meaning, no exceptions. Read the merged diff and find where two builders used different words for the same thing. One name survives. The other gets cut. Report inconsistencies with the recommended canonical form. Be terse — if it's consistent, say so and stop.
 
-**Output**: `normalization.md` — list of inconsistencies with recommended fixes, or empty if clean.
+[PASTE KEY VALUES on naming if they exist]"
+
+**Output**: `.loop/normalization.md` — list of inconsistencies with recommended fixes, or "Clean — no inconsistencies found."
+
+Apply normalization fixes before verification.
 
 ### 3c: Verify (parallel)
 
@@ -116,28 +182,47 @@ Two agents run in parallel on the merged diff:
 
 **The Storm — Adversarial Review (Opus)**:
 
-Brief with: "You are The Storm. You find the leak before the sea does. You don't care how clever the design is. You care what happens when the inputs are wrong, the network drops, and the user does something no one anticipated. Find irreversible decisions, implicit assumptions, and failure modes under partial state. Be specific — name the file, line, and scenario. Output as structured JSON."
+Brief: "You are The Storm. You find the leak before the sea does. You don't care how clever the design is. You care what happens when the inputs are wrong, the network drops, and the user does something no one anticipated. Find irreversible decisions, implicit assumptions, and failure modes under partial state. Be specific — name the file, line, and scenario. Output as structured JSON.
 
-- Output: `storm-report.json` — structured JSON array:
-  ```json
-  {"location": "", "issue": "", "severity": "critical|high|medium|low", "suggestion": ""}
-  ```
+[PASTE KEY VALUES so you can check code against them]"
+
+Output: `.loop/storm-report.json` — structured JSON array:
+```json
+[{"location": "", "issue": "", "severity": "critical|high|medium|low", "suggestion": ""}]
+```
 
 **The Cartographer — Edge Case Hunter (Sonnet)** — invoke `/edge-case-hunter`:
 - Exhaustive path enumeration on the diff
-- Output: `edge-cases.json` — structured JSON array per finding:
-  ```json
-  {"location": "", "trigger_condition": "", "guard_snippet": "", "potential_consequence": ""}
-  ```
+- Output: `.loop/edge-cases.json` — structured JSON array:
+```json
+[{"location": "", "trigger_condition": "", "guard_snippet": "", "potential_consequence": ""}]
+```
 - Empty array `[]` is valid (no hallucinated findings)
 
 ### The Monkey at Ship
 
-After The Storm and The Cartographer report, The Monkey asks one final question: "If you deployed this right now and went to sleep, what would wake you up?" She's looking for the operational edge case — the thing that works in tests but fails at 3am under real load, real data, real users doing real stupid things. If nobody has an answer, that's the answer.
+Launch the Monkey agent with:
+- Context: merged diff + storm-report.json + edge-cases.json
+- Step: "ship"
+
+Brief: "You are The Monkey. Read the merged diff, the Storm's report, and the Cartographer's map. Read `VALUES.md` if it exists. Pick one technique — probably Time Travel or Scale Shift — and find the operational edge case that works in tests but fails at 3am. Produce one structured JSON finding."
+
+Output: `.loop/monkey-ship.json`
+
+If `survived: false` and confidence is high, treat it like a Storm finding and fix it. Present all Monkey findings to the user regardless.
 
 ### 3d: Fix
 
-Triage and apply fixes from `storm-report.json` (critical and high first) + `edge-cases.json` + normalization findings + anything The Monkey surfaced. When Storm and Cartographer findings overlap or contradict, present the conflict to the human — don't resolve silently. Re-run tests after fixes.
+Triage and apply fixes:
+1. Storm critical/high severity first
+2. Cartographer findings that would corrupt data or crash at runtime
+3. Monkey findings where `survived: false` and confidence is high
+4. Normalization fixes
+5. Everything else goes to backlog
+
+When Storm and Cartographer findings reference the same location, present both to the user — don't resolve silently.
+
+Re-run tests after fixes.
 
 ### 3e: Verify clean
 
@@ -152,7 +237,17 @@ Summarize:
 - Files modified/created
 - Test count before → after
 - Any decisions made during build
+- Monkey report: what she challenged, what survived, what didn't
 - Suggested next: run `/retro` to capture learnings
+
+## Error Handling
+
+When things go wrong:
+- **Sentinel writes tests that can't compile**: Stop. Present the error to the user. The plan might be ambiguous — loop back to clarifying the plan, not to forcing the tests.
+- **Shipwright can't make tests pass after 3 attempts**: Stop the worktree. Present the failing tests and the Shipwright's last attempt to the user. The test or the plan might be wrong.
+- **Merge conflict**: Never auto-resolve. Present both versions to the user. They decide which survives.
+- **Tests pass in worktrees but fail after merge**: This is an integration bug. Present the failure. Check Monkey at Build findings — she might have already caught the seam.
+- **Typecheck fails after all tests pass**: Present the type errors. These are usually naming mismatches between worktrees — check normalization.md.
 
 ## Model Assignment
 
@@ -163,14 +258,16 @@ Summarize:
 | Normalize | Opus | Conceptual consistency requires deep understanding |
 | Adversarial reviewer | Opus | Must find real issues, not surface noise |
 | Edge case hunter | Sonnet | Mechanical path enumeration, method not judgment |
+| Monkey | Opus | Chaos requires intelligence. Dumb chaos is noise. |
 
 ## Rules
 
 - **Never run TDD and build in the same agent.** This is the single most important rule. Correlated failure is silent and deadly.
+- **The Monkey is a real agent.** Launch her with a brief, a context, and expect structured JSON back. She is not inline narrative. She is not optional. She is not decoration.
 - **Always use worktree isolation for parallel agents.** Context quality degrades in shared sessions.
-- **Empty edge case array is valid.** The hunter must not hallucinate findings to justify its existence.
+- **Empty edge case array is valid.** The Cartographer must not hallucinate findings to justify existence.
 - **Human approves at Frame.** Don't start building without explicit go-ahead.
-- **Plan is a hard gate.** No plan.md = no build. This is not negotiable. If the user says "skip the plan," tell them to at minimum provide: intent, tasks, and out-of-scope. Without these, the Sentinel writes tests against air.
-- **Don't skip the review.** The loop's value is verification. If you catch yourself rubber-stamping Ship findings to go faster, stop. That's the moment the loop stops protecting you.
-- **Watch for prompt drift.** After 5+ iterations in one session, context accumulates and agent behavior subtly changes. If output quality drops, `/clear` and restart the current step with fresh context.
-- **Stop condition for findings.** Fix critical and high severity issues from `storm-report.json`. For edge cases, fix any that would corrupt data or crash at runtime. The rest go to backlog. You don't fix all 50 — you fix the ones that would wake you up at 3am.
+- **Plan is a hard gate.** No plan.md = no build. Non-negotiable.
+- **Paste values into briefs.** "Read VALUES.md" is not enough for subagents. Paste the relevant content into each brief so it's in their context.
+- **Clean .loop/ between runs.** Stale artifacts are silent poison.
+- **Stop condition for findings.** Fix critical and high severity from Storm. Fix data-corruption and crash findings from Cartographer. Fix `survived: false` high-confidence Monkey findings. The rest goes to backlog.

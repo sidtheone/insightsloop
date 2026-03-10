@@ -22,12 +22,18 @@ Before starting, check the repo root for `VALUES.md` and `TDD-MATRIX.md`. If the
 
 ### 1. Gather Context
 
-Read from the most recent build:
-- `plan.md` (including Challenge section) — what was intended and what risks were identified
-- Git log — what was actually committed
-- Test results — what passed/failed
+Read from `.loop/` directory:
+- `plan.md` — what was intended and what risks were identified
+- `frame.md` — triage decision and parallelization plan
 - `storm-report.json` — what The Storm found (if it exists)
 - `edge-cases.json` — what The Cartographer found (if it exists)
+- `normalization.md` — what The Editor found (if it exists)
+- `monkey-*.json` — all Monkey findings across every step
+- `filtered-findings.json` — everything that was below 80 confidence (if devloopfast was used)
+
+Also read:
+- Git log — what was actually committed
+- Test results — what passed/failed
 
 ### 2. Ask Three Questions
 
@@ -41,14 +47,33 @@ Present to user:
 **What went wrong?**
 - What surprised us?
 - What did we build wrong and have to redo?
-- What did the edge case hunter or adversarial review miss?
-- Was the triage accurate? (Did a "small" change turn out medium?)
+- What did the Storm, Cartographer, or Monkey miss?
+- Was the triage accurate? (Check frame.md — did a "small" change turn out medium?)
 
 **What do we change?**
 - New patterns to add to PATTERNS.md?
 - New rules for CLAUDE.md?
 - Triage criteria that need adjusting?
 - Test patterns that should be standard?
+
+### 2b. Evaluate the Filter (devloopfast only)
+
+If `filtered-findings.json` exists, review it:
+- Were any filtered findings actually important? (False negatives from the 80 threshold)
+- Were surfaced findings mostly noise? (Threshold too low)
+- Did the Monkey catch anything the Storm and Cartographer missed?
+- Recommendation: should the threshold change?
+
+This is how the confidence filter self-corrects over time.
+
+### 2c. Evaluate the Monkey
+
+Review all `monkey-*.json` files:
+- Which techniques did she use? Was there variety or repetition?
+- How many findings survived vs didn't?
+- Did any `survived: false` finding lead to a real fix?
+- Did any `survived: true` finding give the crew confidence in a decision?
+- Is the Monkey earning her keep or producing noise?
 
 ### 3. Update Project Knowledge
 
@@ -75,3 +100,4 @@ Example: `2026-03-10 embed-widget: Parallel agents without worktree isolation ca
 - Only write down things that will change future behavior. "It went well" isn't actionable.
 - Don't update files the user hasn't approved. Present changes, get confirmation, then write.
 - An empty retro is valid. If nothing was learned, say so and move on.
+- Always check the Monkey's performance. She's the differentiator — if she's not earning her keep, the retro should say so.
