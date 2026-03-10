@@ -1,16 +1,16 @@
 ---
 name: devloopfast
-description: "Speed mode build loop. Same crew, less ceremony. Auto-triages from plan.md (no Frame approval gate for small/medium), confidence-filters Storm and Cartographer findings (80+ only). Use when you trust the plan and want to ship fast. Trigger on: 'fast build', 'quick build', 'devloopfast', 'speed mode', 'just build it'."
+description: "Speed mode build loop. Same crew, same Monkey, less ceremony. Auto-triages from plan.md (no Frame approval gate for small/medium), confidence-filters Storm and Cartographer findings (80+ only). The Monkey never sleeps — she just doesn't block. Use when you trust the plan and want to ship fast. Trigger on: 'fast build', 'quick build', 'devloopfast', 'speed mode', 'just build it'."
 ---
 
 # DevLoopFast — Speed Mode
 
-Same crew, same values, less ceremony. This is `/devloop` with two changes:
+Same crew, same values, same Monkey, less ceremony. This is `/devloop` with two changes:
 
 1. **Auto-triage** — Frame runs but doesn't wait for approval on small/medium changes. Only architectural changes gate on human approval.
-2. **Confidence filtering** — Storm and Cartographer only surface findings with confidence 80+. Below that, silently logged to `filtered-findings.json` (never discarded — just not in your face).
+2. **Confidence filtering** — Storm and Cartographer only surface findings with confidence 80+. Below that, logged to `filtered-findings.json` (never discarded — just not in your face).
 
-Everything else is identical to `/devloop`. Sentinel is still separate from Shipwright. Values still load. Worktrees still isolate.
+The Monkey is not a ceremony. She's the immune system. She shows up at every step in both modes. The only difference: in speed mode she doesn't block the loop. She asks her question, logs the answer, and the crew keeps moving. If she finds something real, it goes into `filtered-findings.json` with a `"source": "monkey"` tag so you can see exactly what she caught.
 
 ## What's Different from /devloop
 
@@ -18,8 +18,8 @@ Everything else is identical to `/devloop`. Sentinel is still separate from Ship
 |--------|----------|--------------|
 | Frame approval | Always waits | Auto-approves small/medium, gates architectural |
 | Monkey at Frame | Asks, waits | Asks, logs, moves on |
-| Monkey at TDD | Asks, waits | Skipped |
-| Monkey at Build | Asks, waits | Skipped |
+| Monkey at TDD | Asks, waits | Asks, logs, moves on |
+| Monkey at Build | Asks, waits | Asks, logs, moves on |
 | Monkey at Ship | Asks, waits | Asks, logs, moves on |
 | Storm output | All findings | 80+ confidence only |
 | Cartographer output | All findings | 80+ confidence only |
@@ -29,6 +29,7 @@ Everything else is identical to `/devloop`. Sentinel is still separate from Ship
 ## What's NOT Different
 
 - Phase 0: Values still load. Non-negotiable.
+- The Monkey shows up at every step. Non-negotiable.
 - Sentinel is still a separate agent from Shipwright. Correlated failure protection stays.
 - Worktree isolation stays.
 - Plan is still a hard gate. No plan = no build.
@@ -48,7 +49,7 @@ Read `plan.md`. Determine triage from `## Challenge` section:
 
 | Size | Criteria | What runs | Approval |
 |------|----------|-----------|----------|
-| Small | 1 file, no new interfaces, existing patterns | Build → Ship (skip normalize, skip Monkey) | Auto |
+| Small | 1 file, no new interfaces, existing patterns | Build → Ship (skip normalize) | Auto |
 | Medium | Multi-file, existing patterns | Build → Ship (skip normalize) | Auto |
 | Architectural | New interfaces, schema changes, public API | Full loop | **Wait for human** |
 
@@ -57,9 +58,13 @@ Write `frame.md` with triage label and task parallelization plan.
 For small/medium: log the triage decision and proceed immediately.
 For architectural: present to user, wait for approval.
 
+### The Monkey at Frame
+
+She still asks: "What if this triage is wrong?" If the answer changes the triage, re-triage. If not, log her question and move on. She doesn't block, but she always asks.
+
 ## Step 2: Build
 
-Identical to `/devloop`. No shortcuts here — this is where correctness lives.
+No shortcuts here — this is where correctness lives.
 
 ### 2a: TDD — The Sentinel (Opus)
 
@@ -67,11 +72,19 @@ Separate agent. Receives plan WITHOUT Challenge section. Writes failing tests.
 
 Brief: "You are The Sentinel. Write contracts like lives depend on them. Derive failure modes independently from the plan. Do NOT read the Challenge section. Follow the project's TDD matrix if one exists. You do NOT implement — you only write the tests."
 
+### The Monkey at TDD
+
+She picks one test and invents an input the Sentinel didn't consider. If it's a real gap, add the test. If not, log it and move on. She doesn't wait for approval — the test either gets added or it doesn't.
+
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
 Isolated worktrees per task. Each Shipwright makes its assigned tests pass.
 
 Brief: "You are The Shipwright. Build fast, build clean, no wasted wood. Make the failing tests pass, nothing more."
+
+### The Monkey at Build
+
+She looks at the integration seam between worktrees. "What if the other worktree named this differently?" If she spots a real mismatch, flag it in `filtered-findings.json` with `"source": "monkey"`. The crew keeps building.
 
 ## Step 3: Ship (Filtered)
 
@@ -108,6 +121,10 @@ Output: `edge-cases.json` — structured JSON array:
 - Findings with confidence <80 → written to `filtered-findings.json`, not surfaced
 - Empty arrays remain valid
 
+### The Monkey at Ship
+
+"If you deployed this right now and went to sleep, what would wake you up?" She asks this regardless of triage size. Her answer gets logged to `filtered-findings.json` with `"source": "monkey"`. If it's 80+ confidence and critical/high severity, it gets surfaced like any other finding. She doesn't get special treatment — she earns her way past the filter like everyone else.
+
 ### 3d: Fix
 
 Fix only 80+ confidence findings that are critical or high severity. Rest goes to `filtered-findings.json`.
@@ -123,6 +140,7 @@ Summarize:
 - Files modified/created
 - Test count before → after
 - Findings surfaced vs filtered (e.g., "4 shown, 7 filtered to filtered-findings.json")
+- Monkey findings count (e.g., "Monkey flagged 3 items across 4 steps")
 - Suggested next: run `/retro` or review `filtered-findings.json`
 
 ## Model Assignment
@@ -139,9 +157,11 @@ Same as `/devloop`:
 
 ## Rules
 
+- **The Monkey never sleeps.** She shows up at every step in both modes. Speed mode changes whether she blocks, not whether she exists. This is what makes InsightsLoop different — chaos is not optional ceremony.
 - **Sentinel and Shipwright are never the same agent.** Speed mode doesn't compromise on correlated failure.
 - **Always use worktree isolation.** Speed mode doesn't compromise on context quality.
 - **Plan is a hard gate.** Speed mode doesn't mean no plan.
 - **Filtered findings are never deleted.** They go to `filtered-findings.json`. The user can review them later. Transparency is non-negotiable — speed mode hides, it doesn't discard.
+- **Monkey findings use the same filter.** She doesn't get a free pass. If her finding is below 80 confidence, it gets filtered like everything else. She earns attention the same way the Storm does.
 - **Architectural changes always gate.** If the triage says architectural, this skill behaves exactly like `/devloop`. No auto-approval for big changes.
 - **When in doubt, escalate.** If confidence is borderline (75-80), round up and show it. Better to over-report than to hide a real issue for speed.
