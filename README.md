@@ -1,9 +1,9 @@
 # InsightsLoop
 
-An opinionated engine for shipping quality, minimalist software with less drift.
+An opinionated dev engine for human+AI teams. 11 skills, 9 personas, one pipeline.
 
 ```
-/plan → /devloop (or /devloopfast) → /edge-case-hunter → /retro
+/insight-plan → /insight-devloop (or /insight-devloopfast) → /insight-retro
 ```
 
 ## Why InsightsLoop
@@ -28,36 +28,51 @@ Every step has a persona. These aren't decoration — they define how each agent
 
 | Persona | Role | Skill | Model |
 |---------|------|-------|-------|
-| **The Navigator** | Charts every rock before setting sail | `/plan` | Opus |
-| **The Sentinel** | Writes contracts like lives depend on them | `/devloop` — TDD | Opus |
-| **The Shipwright** | Builds fast, builds clean, no wasted wood | `/devloop` — Build | Sonnet |
-| **The Editor** | One word, one meaning, no exceptions | `/devloop` — Normalize | Opus |
-| **The Storm** | Finds the leak before the sea does | `/devloop` — Adversarial | Opus |
-| **The Cartographer** | Maps every path, marks every cliff | `/edge-case-hunter` | Sonnet |
-| **The Monkey** | Cheerful, targeted chaos — if she doesn't break it, production will | `/monkey` + every step | Opus |
-| **The Helmsman** | Steers what the user sees — radical minimalist | `/ux` | Opus |
-| **The Lookout** | Remembers every voyage, spots the pattern | `/retro` | Sonnet |
+| **The Navigator** | Charts every rock before setting sail | `/insight-plan` | Opus |
+| **The Sentinel** | Writes contracts like lives depend on them | `/insight-sentinel` | Opus |
+| **The Shipwright** | Builds fast, builds clean, no wasted wood | `/insight-shipwright` | Sonnet |
+| **The Editor** | One word, one meaning, no exceptions | `/insight-editor` | Opus |
+| **The Storm** | Finds the leak before the sea does | `/insight-storm` | Opus |
+| **The Cartographer** | Maps every path, marks every cliff | `/insight-edge-case-hunter` | Sonnet |
+| **The Monkey** | Cheerful, targeted chaos — if she doesn't break it, production will | `/insight-monkey` + every step | Opus |
+| **The Helmsman** | Steers what the user sees — radical minimalist | `/insight-ux` | Opus |
+| **The Lookout** | Remembers every voyage, spots the pattern | `/insight-retro` | Sonnet |
 
 ## The Loop
 
-1. **`/plan`** — The Navigator explores the codebase, asks hard questions, designs architecture, challenges against values. Produces `plan.md` (with Challenge section).
+### Orchestrators
 
-2. **`/devloop`** — The crew takes the charts and builds:
+1. **`/insight-plan`** — The Navigator explores the codebase, asks hard questions, designs architecture, challenges against values. Produces `plan.md` (with Challenge section). Visual Spec section uses explicit MOVE/DELETE/ADD/KEEP instructions — every MOVE implies a DELETE at the source.
+
+2. **`/insight-devloop`** — The crew takes the charts and builds:
    - **Frame**: Triage (small/medium/architectural), parallelization plan
    - **Build**: The Sentinel writes tests (Opus) → The Shipwright builds (Sonnet, parallel worktrees)
    - **Ship**: Merge → The Editor normalizes → The Storm + The Cartographer verify in parallel → fix
    - **The Monkey**: Launches as a real agent at every step. Structured markdown output. Specific chaos.
-   - **Done**: Write summary, archive run, suggest `/retro`
+   - **Done**: Write summary, archive run, suggest `/insight-retro`
+   - **Cartographer skip**: Visual-only changes (layout, CSS, copy) skip the Cartographer — Storm carries verification alone.
 
-3. **`/devloopfast`** — Speed mode. Same crew, same Monkey. Auto-triages small/medium (no approval gate), confidence-filters all findings at 80+ (Storm, Cartographer, and Monkey). Below-threshold findings saved to `filtered-findings.md`, never discarded. The Monkey still launches at every step — she just doesn't block.
+3. **`/insight-devloopfast`** — Speed mode. Same crew, same Monkey. Auto-triages small/medium (no approval gate), confidence-filters all findings at 80+ (Storm, Cartographer, and Monkey). Below-threshold findings saved to `filtered-findings.md`, never discarded. The Monkey still launches at every step — she just doesn't block. Same Cartographer skip for visual-only changes.
 
-4. **`/monkey`** — The Monkey, standalone. Point her at a file, a plan, a diff, or a decision. She picks one technique from her arsenal, applies it with specificity, and produces a structured finding. Not a reviewer — a disruptor.
+### Standalone Crew Skills
 
-5. **`/edge-case-hunter`** — The Cartographer maps every code path mechanically. Called at Ship, also standalone. Markdown table output.
+Each crew member can be invoked directly for focused work outside the loop:
 
-6. **`/ux`** — The Helmsman. Minimalist UX designer invoked when a story has a user-facing surface. Produces: user goal, flow (max 5 steps), ASCII wireframe, cut list, and copy. Subtract, don't add.
+4. **`/insight-sentinel`** — TDD contract writer. Derives failing test suites from plan intent. Tests behavior, not implementation. Boundary conditions are not optional.
 
-7. **`/retro`** — The Lookout captures what the crew learned. Reads all artifacts including Monkey findings and filtered findings. Evaluates the confidence filter. Looks across multiple runs for patterns. Updates project knowledge.
+5. **`/insight-shipwright`** — Implementation builder. Makes failing tests pass — fast, clean, no wasted wood. Follows Visual Spec as a hard instruction. 3 attempts max.
+
+6. **`/insight-storm`** — Adversarial code reviewer. Traces inputs, outputs, irreversible decisions, and implicit assumptions. Separates introduced vs pre-existing issues. Partial state is her specialty.
+
+7. **`/insight-editor`** — Consistency normalizer. Finds where two builders used different words for the same thing. One name survives. Cross-module assumption mismatches are highest priority.
+
+8. **`/insight-monkey`** — The Monkey, standalone. Point her at a file, a plan, a diff, or a decision. She picks one technique from her arsenal, applies it with specificity, and produces a structured finding. Not a reviewer — a disruptor.
+
+9. **`/insight-edge-case-hunter`** — The Cartographer maps every code path mechanically. Called at Ship, also standalone. Markdown table output. Empty report is valid.
+
+10. **`/insight-ux`** — The Helmsman. Minimalist UX designer invoked when a story has a user-facing surface. Produces: user goal, flow (max 5 steps), ASCII wireframe, cut list, and copy. Subtract, don't add.
+
+11. **`/insight-retro`** — The Lookout captures what the crew learned. Reads all artifacts including Monkey findings and filtered findings. Evaluates the confidence filter. Looks across multiple runs for patterns. Updates project knowledge.
 
 ## The Monkey
 
@@ -122,7 +137,15 @@ Active run in `.insightsLoop/current/`. Archived to `.insightsLoop/run-NNNN-feat
 
 ## Install
 
-Copy skill directories to `.claude/skills/` or install as a plugin.
+Copy skill directories to `.claude/skills/` in your project. All 11 directories map 1:1 to skills:
+
+```bash
+# Clone and copy all skills
+git clone https://github.com/sidtheone/insightsloop.git
+cp -r insightsloop/{plan,devloop,devloopfast,sentinel,shipwright,storm,editor,monkey,edge-case-hunter,ux,retro} your-project/.claude/skills/
+```
+
+Optionally add `VALUES.md` and `TDD-MATRIX.md` to your project root — every skill loads them before execution.
 
 ## The Manifesto
 
