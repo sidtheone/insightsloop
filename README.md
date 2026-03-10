@@ -1,6 +1,6 @@
 # InsightsLoop
 
-A lean development loop for human+AI collaboration. Six skills, one crew.
+A lean development loop for human+AI collaboration. Seven skills, one crew.
 
 ```
 /plan → /devloop (or /devloopfast) → /edge-case-hunter → /retro
@@ -19,6 +19,7 @@ Every step has a persona. These aren't decoration — they define how each agent
 | **The Storm** | Finds the leak before the sea does | `/devloop` — Adversarial | Opus |
 | **The Cartographer** | Maps every path, marks every cliff | `/edge-case-hunter` | Sonnet |
 | **The Monkey** | Cheerful, targeted chaos — if she doesn't break it, production will | `/monkey` + every step | Opus |
+| **The Helmsman** | Steers what the user sees — radical minimalist | `/ux` | Opus |
 | **The Lookout** | Remembers every voyage, spots the pattern | `/retro` | Sonnet |
 
 ## The Loop
@@ -38,7 +39,9 @@ Every step has a persona. These aren't decoration — they define how each agent
 
 5. **`/edge-case-hunter`** — The Cartographer maps every code path mechanically. Called at Ship, also standalone. Markdown table output.
 
-6. **`/retro`** — The Lookout captures what the crew learned. Reads all artifacts including Monkey findings and filtered findings. Evaluates the confidence filter. Looks across multiple runs for patterns. Updates project knowledge.
+6. **`/ux`** — The Helmsman. Minimalist UX designer invoked when a story has a user-facing surface. Produces: user goal, flow (max 5 steps), ASCII wireframe, cut list, and copy. Subtract, don't add.
+
+7. **`/retro`** — The Lookout captures what the crew learned. Reads all artifacts including Monkey findings and filtered findings. Evaluates the confidence filter. Looks across multiple runs for patterns. Updates project knowledge.
 
 ## The Monkey
 
