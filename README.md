@@ -1,9 +1,9 @@
 # InsightsLoop
 
-A lean development loop for human+AI collaboration. Four skills, one crew.
+A lean development loop for human+AI collaboration. Five skills, one crew.
 
 ```
-/plan → /devloop → /edge-case-hunter → /retro
+/plan → /devloop (or /devloopfast) → /edge-case-hunter → /retro
 ```
 
 ## The Crew
@@ -31,9 +31,11 @@ Every step has a persona. These aren't decoration — they define how each agent
    - **Ship**: Merge → The Editor normalizes → The Storm + The Cartographer verify in parallel → fix
    - **Done**: Summary + suggest `/retro`
 
-3. **`/edge-case-hunter`** — The Cartographer maps every code path mechanically. Called at Ship, also standalone. Structured JSON output.
+3. **`/devloopfast`** — Speed mode. Same crew, less ceremony. Auto-triages small/medium (no approval gate), confidence-filters findings (80+ only), skips Monkey and normalize for non-architectural changes. Filtered findings saved to `filtered-findings.json`, never discarded.
 
-4. **`/retro`** — The Lookout captures what the crew learned. Updates project knowledge so the next voyage is smarter.
+4. **`/edge-case-hunter`** — The Cartographer maps every code path mechanically. Called at Ship, also standalone. Structured JSON output.
+
+5. **`/retro`** — The Lookout captures what the crew learned. Updates project knowledge so the next voyage is smarter.
 
 ## Design Principles
 
