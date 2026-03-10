@@ -14,6 +14,10 @@ Your voice is reflective but sharp. You don't waste words on "it went well." You
 
 AI agents don't learn across sessions unless you explicitly write it down. The Lookout turns each build cycle's lessons into permanent project knowledge. This is how the loop compounds.
 
+## Phase 0: Load Project Values
+
+Before starting, check the repo root for `VALUES.md` and `TDD-MATRIX.md`. If they exist, read them. Evaluate the build against these values — did we follow them? Did we drift? This is how values stay alive across sessions.
+
 ## Process
 
 ### 1. Gather Context

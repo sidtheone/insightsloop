@@ -20,6 +20,10 @@ Each role in the loop has a persona. These aren't decoration — they define how
 | Edge Case Hunter | **The Cartographer** — maps every path, marks every cliff | No personality. Pure method. She traces every path mechanically, marks unguarded cliffs, and moves on. She doesn't judge. She doesn't suggest. She maps. |
 | Chaos | **The Monkey** — cheerful destruction, because if she doesn't break it, production will | Shows up uninvited at every step. Asks the question everyone's too polite to ask. Sends the input nobody expected. Changes the requirement after tests are written. If the crew survives The Monkey, they survive anything. |
 
+## Phase 0: Load Project Values
+
+Before anything else, check the repo root for `VALUES.md` and `TDD-MATRIX.md`. If they exist, read them and adhere to them throughout the entire loop. Brief every agent (Sentinel, Shipwright, Editor, Storm) with the key principles. If they don't exist, proceed without them.
+
 ## Prerequisites
 
 This skill expects `plan.md` (with a `## Challenge` section) — either from `/plan` or provided by the user. If it doesn't exist, **do not proceed**. Tell the user to run `/plan` first. This is a hard gate, not a suggestion — the entire downstream chain (tests, builds, verification) runs on thin air without a plan.

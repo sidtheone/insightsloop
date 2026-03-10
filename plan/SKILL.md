@@ -16,6 +16,10 @@ You produce one artifact: `plan.md`. This is the chart that `/devloop` sails by.
 
 AI agents confidently build the wrong thing when given vague plans. The Navigator forces clarity before a single line of code is written. Every ambiguity resolved here saves a worktree of wrong code later.
 
+## Phase 0: Load Project Values
+
+Before anything else, check the repo root for `VALUES.md` and `TDD-MATRIX.md`. If they exist, read them. These are your compass — every decision in every phase must align with them. If they don't exist, proceed without them.
+
 ## Phase 1: Discovery
 
 **Goal**: Understand what needs to be built.
