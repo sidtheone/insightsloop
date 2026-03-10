@@ -1,20 +1,20 @@
 ---
-name: devloopfast
+name: insight-devloopfast
 description: "Speed mode build loop. Same crew, same Monkey, less ceremony. Auto-triages (no approval gate for small/medium), confidence-filters findings (80+ only). The Monkey never sleeps — she just doesn't block. Use when you trust the plan and want to ship fast. Trigger on: 'fast build', 'quick build', 'devloopfast', 'speed mode', 'just build it'."
 ---
 
 # DevLoopFast — Speed Mode
 
-Same crew, same values, same Monkey, less ceremony. This is `/devloop` with two changes:
+Same crew, same values, same Monkey, less ceremony. This is `/insight-devloop` with two changes:
 
 1. **Auto-triage** — Frame runs but doesn't wait for approval on small/medium changes. Only architectural changes gate on human approval.
 2. **Confidence filtering** — Storm, Cartographer, and Monkey findings filtered at 80+ confidence. Below that, logged to `.insightsLoop/current/filtered-findings.md` (never discarded — just not in your face).
 
-The Monkey is not ceremony. She's the immune system. She runs at every step as a real agent with structured output. The only difference from `/devloop`: she doesn't block the loop. She produces her finding, it gets confidence-filtered like everything else, and the crew keeps moving.
+The Monkey is not ceremony. She's the immune system. She runs at every step as a real agent with structured output. The only difference from `/insight-devloop`: she doesn't block the loop. She produces her finding, it gets confidence-filtered like everything else, and the crew keeps moving.
 
-## What's Different from /devloop
+## What's Different from /insight-devloop
 
-| Aspect | /devloop | /devloopfast |
+| Aspect | /insight-devloop | /insight-devloopfast |
 |--------|----------|--------------|
 | Frame approval | Always waits | Auto-approves small/medium, gates architectural |
 | Monkey | Real agent, blocks on `Survived: no` | Real agent, logs finding, moves on |
@@ -36,17 +36,29 @@ The Monkey is not ceremony. She's the immune system. She runs at every step as a
 
 ## Phase 0: Load Project Values
 
-Same as `/devloop`. Read `VALUES.md` and `TDD-MATRIX.md`. Paste content into agent briefs. The Monkey reads VALUES.md herself.
+Same as `/insight-devloop`. Read `VALUES.md` and `TDD-MATRIX.md`. Paste content into agent briefs. The Monkey reads VALUES.md herself.
+
+Also read the crew SKILL.md files (same as devloop):
+- `.claude/skills/insight-sentinel/SKILL.md` — The Sentinel
+- `.claude/skills/insight-shipwright/SKILL.md` — The Shipwright
+- `.claude/skills/insight-storm/SKILL.md` — The Storm
+- `.claude/skills/insight-editor/SKILL.md` — The Editor
+
+Same crew, same identities, same methods. Speed mode changes ceremony, not crew definitions.
+
+Also read `.insightsLoop/config.md` for engine tunables:
+- `monkey_findings_per_step` (default: 1) — if > 1, tell the Monkey to produce N findings per step, each using a different technique
+- `confidence_threshold` (default: 80) — filtering cutoff for Storm, Cartographer, and Monkey findings
 
 ## Artifact Directory
 
-Same as `/devloop` — all artifacts in `.insightsLoop/current/` during the run, archived to `run-NNNN-feature-name/` on completion. One additional artifact:
+Same as `/insight-devloop` — all artifacts in `.insightsLoop/current/` during the run, archived to `run-NNNN-feature-name/` on completion. One additional artifact:
 
 - `filtered-findings.md` — findings below 80 confidence, kept in archive for retro evaluation
 
 ## Prerequisites
 
-Same as `/devloop` — `plan.md` with `## Challenge` section must exist.
+Same as `/insight-devloop` — `plan.md` with `## Challenge` section must exist.
 
 ## Step 1: Frame (Auto-Triage)
 
@@ -61,37 +73,37 @@ Read `plan.md`. Determine triage from `## Challenge` section:
 Write `.insightsLoop/current/frame.md` with triage label and task parallelization plan.
 
 For small/medium: log the triage decision and proceed immediately.
-For architectural: present to user, wait for approval.
+For architectural: use the `AskUserQuestion` tool to present the frame and get approval. Options: "Approve — start building", "Adjust — change triage or scope", "Abort — back to plan".
 
 ### The Monkey at Frame
 
-Launch the Monkey agent. Same brief as `/devloop`. She produces `.insightsLoop/current/monkey-frame.md`.
+Launch the Monkey agent. Same brief as `/insight-devloop`. She produces `.insightsLoop/current/monkey-frame.md`.
 
 If `Survived: no`:
-- For architectural: stop and discuss (same as /devloop)
+- For architectural: stop and discuss (same as /insight-devloop)
 - For small/medium: log to `filtered-findings.md`, proceed. But if the Monkey's finding would change the triage (e.g., a "small" is actually "medium"), re-triage even in speed mode. Triage correctness is not optional.
 
 ## Step 2: Build
 
-Same as `/devloop`. No shortcuts at Build — this is where correctness lives.
+Same as `/insight-devloop`. No shortcuts at Build — this is where correctness lives.
 
 ### 2a: TDD — The Sentinel (Opus)
 
-Same as `/devloop`. Same brief with pasted TDD-MATRIX.md and values.
+Same as `/insight-devloop`. Read the Sentinel's SKILL.md and construct her brief per devloop Step 2a.
 
 ### The Monkey at TDD
 
-Launch the Monkey agent. Same brief as `/devloop`. She produces `.insightsLoop/current/monkey-tdd.md`.
+Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal (Assumption Flip, Hostile Input, Existence Question, Scale Shift, Time Travel, Cross-Seam Probe, Requirement Inversion, Delete Probe), step-specific technique recommendations, and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-tdd.md`.
 
 If `Survived: no` and the finding is a concrete test case (not abstract), add the test automatically. If it's abstract or low confidence, log to `filtered-findings.md`. No human gate — the test either gets added by the orchestrator or it doesn't.
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
-Same as `/devloop`. Same brief with pasted values.
+Same as `/insight-devloop`. Read the Shipwright's SKILL.md and construct each brief per devloop Step 2b.
 
 ### The Monkey at Build
 
-Launch the Monkey agent. Same brief as `/devloop`. She produces `.insightsLoop/current/monkey-build.md`.
+Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal, step-specific technique recommendations (Cross-Seam Probe, Time Travel, Scale Shift), and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-build.md`.
 
 If `Survived: no`, log to `filtered-findings.md`. Proceed to merge regardless — but if the finding specifically identifies a naming mismatch between worktrees, flag it for the merge step so it gets resolved there.
 
@@ -99,19 +111,25 @@ If `Survived: no`, log to `filtered-findings.md`. Proceed to merge regardless �
 
 ### 3a: Merge
 
-Same as `/devloop`. Conflicts still stop the loop and go to the user.
+Same as `/insight-devloop`. Conflicts still stop the loop and go to the user.
 
 ### 3b: Normalize — The Editor
 
-**Architectural only.** Skip for small and medium.
+**Architectural only.** Skip for small and medium. Read the Editor's SKILL.md at `.claude/skills/insight-editor/SKILL.md` and construct the brief per devloop Step 3b.
+
+**IMPORTANT: Write `normalization.md` immediately** after the Editor returns. Agent output alone is not persistent.
 
 ### 3c: Verify (parallel, confidence-filtered)
 
-Two agents run in parallel. Same briefs as `/devloop`, but with one addition to each:
+Two agents run in parallel:
 
-**Storm brief addition**: "For each finding, assign a confidence score (0-100) based on how certain you are this is a real issue, not a theoretical concern. Add a Confidence column to the table."
+**The Storm (Opus)**: Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md` and construct the brief per devloop Step 3c. Add one instruction: "For each finding, assign a confidence score (0-100) based on how certain you are this is a real issue, not a theoretical concern. Add a Confidence column to the table."
 
-**Cartographer brief addition**: "For each finding, add a Confidence column (0-100) based on how certain you are this path is actually reachable and unguarded."
+**The Cartographer (Sonnet)**: Invoke `/insight-edge-case-hunter` as the actual skill (use the Skill tool, not a general-purpose agent). Add one instruction: "For each finding, add a Confidence column (0-100) based on how certain you are this path is actually reachable and unguarded."
+
+**Skip condition:** If the story is visual-only (layout, CSS, copy changes) with no new code paths, skip the Cartographer entirely. Mechanical path enumeration adds nothing when no branches exist to enumerate — Storm carries verification alone. Write an empty `edge-cases.md` (header only) for the archive and note "Skipped: visual-only change" at the top.
+
+**IMPORTANT: Write both `storm-report.md` and `edge-cases.md` immediately** after each agent returns. Agent output alone is not persistent.
 
 Storm output: `.insightsLoop/current/storm-report.md`:
 
@@ -133,7 +151,7 @@ Cartographer output: `.insightsLoop/current/edge-cases.md` — same format with 
 
 ### The Monkey at Ship
 
-Launch the Monkey agent. Same brief as `/devloop`. She produces `.insightsLoop/current/monkey-ship.md`.
+Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal, step-specific technique recommendations (Time Travel, Scale Shift, Hostile Input), and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-ship.md`.
 
 Her finding goes through the same 80+ confidence filter. No special treatment. She earns attention like everyone else.
 
@@ -147,7 +165,7 @@ Run full test suite + typecheck.
 
 ## Step 4: Done
 
-Same as `/devloop` — write `summary.md`, archive the run. One addition to summary:
+Same as `/insight-devloop` — write `summary.md`, archive the run. One addition to summary:
 
 ```markdown
 ## Filtering
@@ -160,7 +178,7 @@ Same as `/devloop` — write `summary.md`, archive the run. One addition to summ
 
 ## Model Assignment
 
-Same as `/devloop`. Monkey is Opus.
+Same as `/insight-devloop`. Monkey is Opus.
 
 ## Rules
 
@@ -170,7 +188,7 @@ Same as `/devloop`. Monkey is Opus.
 - **Sentinel and Shipwright are never the same agent.**
 - **Always use worktree isolation.**
 - **Plan is a hard gate.**
-- **Filtered findings are never deleted.** `filtered-findings.md` survives into the archived run. The user and `/retro` can review it.
-- **Architectural changes always gate.** If triage says architectural, this skill behaves exactly like `/devloop`.
+- **Filtered findings are never deleted.** `filtered-findings.md` survives into the archived run. The user and `/insight-retro` can review it.
+- **Architectural changes always gate.** If triage says architectural, this skill behaves exactly like `/insight-devloop`.
 - **Archive runs, don't delete.** Same as devloop.
-- **Same error handling as /devloop.** Merge conflicts, test failures, and typecheck errors still stop the loop. Speed mode doesn't mean reckless mode.
+- **Same error handling as /insight-devloop.** Merge conflicts, test failures, and typecheck errors still stop the loop. Speed mode doesn't mean reckless mode.

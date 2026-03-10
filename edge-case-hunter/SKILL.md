@@ -1,6 +1,6 @@
 ---
-name: edge-case-hunter
-description: "Exhaustive path enumeration for unhandled edge cases in code. Mechanically walks every branching path and boundary condition, reports only unhandled paths with guard snippets. Use on diffs, files, or functions after implementation. Trigger on: 'hunt edge cases', 'check for edge cases', 'find unhandled paths', 'review this diff for edge cases', or when /devloop reaches the Ship step."
+name: insight-edge-case-hunter
+description: "Exhaustive path enumeration for unhandled edge cases in code. Mechanically walks every branching path and boundary condition, reports only unhandled paths with guard snippets. Use on diffs, files, or functions after implementation. Trigger on: 'hunt edge cases', 'check for edge cases', 'find unhandled paths', 'review this diff for edge cases', or when /insight-devloop reaches the Ship step."
 model: sonnet
 ---
 
@@ -66,7 +66,7 @@ Write a markdown file. Each finding is a row in a table:
 | `src/lib/auth.ts:45` — validateToken() | token parameter is undefined | `if (!token) return { valid: false, error: 'missing token' }` | TypeError thrown, crashes request handler |
 ```
 
-**When the caller requests confidence scoring** (e.g., `/devloopfast`), add a Confidence column:
+**When the caller requests confidence scoring** (e.g., `/insight-devloopfast`), add a Confidence column:
 
 ```markdown
 | Location | Trigger | Guard Snippet | Consequence | Confidence |

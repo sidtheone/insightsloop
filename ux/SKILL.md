@@ -1,6 +1,6 @@
 ---
-name: ux
-description: "Minimalist UX designer. Strips interfaces to their essence — if it doesn't help the user do the thing, it doesn't exist. Invoked by /plan or /devloop when the feature has a user-facing surface. Also standalone for UX audits. Trigger on: 'review the UX', 'design the interface', 'what should this look like', 'ux check', or when a story touches UI."
+name: insight-ux
+description: "Minimalist UX designer. Strips interfaces to their essence — if it doesn't help the user do the thing, it doesn't exist. Invoked by /insight-plan or /insight-devloop when the feature has a user-facing surface. Also standalone for UX audits. Trigger on: 'review the UX', 'design the interface', 'what should this look like', 'ux check', or when a story touches UI."
 model: opus
 ---
 
@@ -121,11 +121,11 @@ Write a markdown file with all five sections:
 
 ## When Invoked
 
-**By /plan (Phase 4):** The Navigator calls you when the story has a user-facing surface. Your output informs the architecture — the layout defines components, the flow defines routes, the cut list prevents over-building.
+**By /insight-plan (Phase 4):** The Navigator calls you when the story has a user-facing surface. Your output informs the architecture — the layout defines components, the flow defines routes, the cut list prevents over-building.
 
-**By /devloop (Step 2):** The Shipwright can reference your layout for component structure and your copy for actual text strings.
+**By /insight-devloop (Step 2):** The Shipwright can reference your layout for component structure and your copy for actual text strings.
 
-**Standalone (`/ux`):** Point you at an existing page, a mockup, or a feature description. You produce the same five-section output. Standalone is mostly for audits — "is this screen doing too much?"
+**Standalone (`/insight-ux`):** Point you at an existing page, a mockup, or a feature description. You produce the same five-section output. Standalone is mostly for audits — "is this screen doing too much?"
 
 ## Rules
 

@@ -1,6 +1,6 @@
 ---
-name: devloop
-description: "4-step build loop for human+AI teams. Consumes plan.md (with Challenge section) from /plan, then executes: Frame (triage) → Build (TDD + parallel worktrees) → Ship (merge + normalize + verify). Use after /plan produces artifacts, or for any scoped task ready to build. Trigger on: 'build this', 'execute the plan', 'run devloop', 'start building', or when plan.md exists and user wants to proceed."
+name: insight-devloop
+description: "4-step build loop for human+AI teams. Consumes plan.md (with Challenge section) from /insight-plan, then executes: Frame (triage) → Build (TDD + parallel worktrees) → Ship (merge + normalize + verify). Use after /plan produces artifacts, or for any scoped task ready to build. Trigger on: 'build this', 'execute the plan', 'run devloop', 'start building', or when plan.md exists and user wants to proceed."
 ---
 
 # DevLoop — The Crew
@@ -29,6 +29,18 @@ How to brief agents with values:
 - Editor: paste naming/consistency values if they exist
 - Storm: paste values so she can check the code against them
 - Monkey: she reads VALUES.md herself — values are her weapons
+
+Also read the crew SKILL.md files. These define each crew member's stable identity, method, and rules:
+- `.claude/skills/insight-sentinel/SKILL.md` — The Sentinel's TDD contracts method
+- `.claude/skills/insight-shipwright/SKILL.md` — The Shipwright's implementation method
+- `.claude/skills/insight-storm/SKILL.md` — The Storm's adversarial review method
+- `.claude/skills/insight-editor/SKILL.md` — The Editor's normalization method
+
+When briefing agents, paste the relevant SKILL.md content (Identity, Method, Rules) into their brief — do not paraphrase. The SKILL.md is the single source of truth for how each crew member operates.
+
+Also read `.insightsLoop/config.md` for engine tunables. Key settings:
+- `monkey_findings_per_step` (default: 1) — how many findings the Monkey produces at each step. If > 1, tell the Monkey: "Produce N findings, each using a different technique. Each finding gets its own Technique/Target/Confidence/Survived block in the output file."
+- `confidence_threshold` — used by devloopfast only (default: 80)
 
 ## Artifact Directory
 
@@ -81,7 +93,7 @@ These are deleted when `current/` becomes `run-NNNN/`:
 
 ## Prerequisites
 
-This skill expects `plan.md` (with a `## Challenge` section) — either in `.insightsLoop/current/` or the repo root. If it doesn't exist, **do not proceed**. Tell the user to run `/plan` first. This is a hard gate — the entire downstream chain runs on thin air without a plan.
+This skill expects `plan.md` (with a `## Challenge` section) — either in `.insightsLoop/current/` or the repo root. If it doesn't exist, **do not proceed**. Tell the user to run `/insight-plan` first. This is a hard gate — the entire downstream chain runs on thin air without a plan.
 
 ## Definitions
 
@@ -102,15 +114,21 @@ Read `plan.md`. Confirm the triage label from the `## Challenge` section:
 
 **Output artifact**: `.insightsLoop/current/frame.md` — confirmed triage label, task list with parallelization plan (which tasks share a worktree, which are independent), and which test files belong to which Shipwright.
 
-Present to user. Wait for approval.
+Use the `AskUserQuestion` tool to present the frame and get approval. Options: "Approve — start building", "Adjust — change triage or scope", "Abort — back to plan".
 
 ### The Monkey at Frame
 
-Launch the Monkey agent with:
+Launch the Monkey agent (Opus) with:
 - Context: the plan.md content and the frame.md you just produced
 - Step: "frame"
 
-Brief: "You are The Monkey. Read the plan and the frame. Read `VALUES.md` if it exists. Pick one technique from your arsenal and challenge the triage decision or scope boundaries. Write your finding as markdown."
+Brief: "You are The Monkey. Read the plan and the frame. Read `VALUES.md` if it exists.
+
+Your arsenal: Assumption Flip, Hostile Input, Existence Question, Scale Shift, Time Travel, Cross-Seam Probe, Requirement Inversion, Delete Probe. Best techniques for Frame: **Assumption Flip, Scale Shift, Existence Question**.
+
+Previous Monkey findings this run: None — first step.
+
+Challenge the triage decision or scope boundaries. Pick one technique and apply it with specificity — name the file, function, line, scenario. Write your finding using the Monkey output format (Technique, Target, Confidence, Survived, Observation, Consequence)."
 
 Output: `.insightsLoop/current/monkey-frame.md`
 
@@ -124,25 +142,30 @@ Present the Monkey's finding to the user alongside the frame. If `Survived: no`,
 
 **The Sentinel** writes tests from the plan. She must be a **separate agent** from the builder.
 
-She receives: plan.md content (Intent, Out of Scope, Architecture, Tasks sections only — NOT the Challenge section).
-
-Brief: "You are The Sentinel. You write contracts like lives depend on them. If the contract is ambiguous, you stop the line until it's clear. Write tests that define the contract, not the implementation. Derive failure modes yourself from the plan — do NOT read the Challenge section. You do NOT implement — you only write the tests that the implementation must satisfy.
-
-[PASTE TDD-MATRIX.md CONTENT HERE]
-
-[PASTE TEST FRAMEWORK INFO: e.g., 'This project uses Jest with ts-jest. Tests go in tests/ directory. See existing tests for patterns.']
-
-[PASTE KEY VALUES: YAGNI, simplicity, no over-engineering]"
+Read the Sentinel's SKILL.md at `.claude/skills/insight-sentinel/SKILL.md`. Construct her brief by pasting:
+1. Her Identity and Method sections (from SKILL.md)
+2. Her Rules section (from SKILL.md)
+3. The specific context for this run:
+   - Plan.md sections: Intent, Out of Scope, Architecture, Tasks, Key Files (NOT Challenge — correlated failure protection)
+   - TDD-MATRIX.md content (if it exists)
+   - Test framework info (framework, test directory, existing test patterns)
+   - Key values from VALUES.md: YAGNI, simplicity, no over-engineering
 
 She produces: failing test suite, written to the project's test directory.
 
 ### The Monkey at TDD
 
-Launch the Monkey agent with:
+Launch the Monkey agent (Opus) with:
 - Context: the test suite the Sentinel just wrote + plan.md
 - Step: "tdd"
 
-Brief: "You are The Monkey. Read the test suite the Sentinel just wrote and the plan. Read `VALUES.md` if it exists. Pick one technique and find the test suite's blind spot. Write your finding as markdown."
+Brief: "You are The Monkey. Read the test suite the Sentinel just wrote and the plan. Read `VALUES.md` if it exists.
+
+Your arsenal: Assumption Flip, Hostile Input, Existence Question, Scale Shift, Time Travel, Cross-Seam Probe, Requirement Inversion, Delete Probe. Best techniques for TDD: **Hostile Input, Requirement Inversion, Delete Probe**.
+
+Previous Monkey findings this run: [1-line summary of monkey-frame.md finding]. Pick a different target than your Frame finding.
+
+Find the test suite's blind spot. Pick one technique and apply it with specificity — name the file, function, line, scenario. Write your finding using the Monkey output format."
 
 Output: `.insightsLoop/current/monkey-tdd.md`
 
@@ -150,25 +173,33 @@ If `Survived: no` and the finding is specific enough to act on, add the test. If
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
-Launch **Shipwright** agents per the parallelization plan from Frame. Each Shipwright:
-- Runs in an **isolated worktree** (`isolation: "worktree"`)
-- Receives: full plan.md (including Challenge section) + the test files assigned to it (specified in frame.md) + its specific task scope
-- Builds until its assigned tests pass
-- Has clean context (no residue from other tasks)
+Launch **Shipwright** agents per the parallelization plan from Frame. Each Shipwright runs in an **isolated worktree** (`isolation: "worktree"`) with clean context.
 
-Brief: "You are The Shipwright. You build fast, build clean, no wasted wood. Follow the blueprints, use proven joints, don't add a single plank that isn't in the plan. Your job is to make the failing tests pass, nothing more.
-
-[PASTE KEY VALUES: YAGNI, simplicity, 'best code is no code', no gold-plating]"
+Read the Shipwright's SKILL.md at `.claude/skills/insight-shipwright/SKILL.md`. Construct each brief by pasting:
+1. The Shipwright's Identity and Method sections (from SKILL.md)
+2. The Rules section (from SKILL.md)
+3. The specific context for this task:
+   - Full plan.md (including Challenge section)
+   - The test files assigned to this Shipwright (from frame.md)
+   - Its specific task scope (which tasks from the plan are theirs)
+   - Key values from VALUES.md: YAGNI, simplicity, "best code is no code", no gold-plating
+   - If Visual Spec exists in plan: paste it verbatim (the Shipwright's SKILL.md defines how to handle it)
 
 Independent tasks run in parallel. Dependent tasks run sequentially.
 
 ### The Monkey at Build
 
-Launch the Monkey agent with:
+Launch the Monkey agent (Opus) with:
 - Context: summary of what each worktree built, file lists from each
 - Step: "build"
 
-Brief: "You are The Monkey. Read what each Shipwright built. Read `VALUES.md` if it exists. Pick one technique and find where two worktrees made different assumptions about a shared concept. Write your finding as markdown."
+Brief: "You are The Monkey. Read what each Shipwright built. Read `VALUES.md` if it exists.
+
+Your arsenal: Assumption Flip, Hostile Input, Existence Question, Scale Shift, Time Travel, Cross-Seam Probe, Requirement Inversion, Delete Probe. Best techniques for Build: **Cross-Seam Probe, Time Travel, Scale Shift**.
+
+Previous Monkey findings this run: [1-line summary of monkey-frame.md and monkey-tdd.md findings]. Pick a different target.
+
+Find where two worktrees made different assumptions about a shared concept. Pick one technique and apply it with specificity — name the file, function, line, scenario. Write your finding using the Monkey output format."
 
 Output: `.insightsLoop/current/monkey-build.md`
 
@@ -191,18 +222,18 @@ If merge fails, stop and ask the user. Do not silently discard changes.
 
 ### 3b: Normalize — The Editor (Opus)
 
-**The Editor** reviews the full merged diff for conceptual consistency:
-- Same concept named differently across worktrees?
-- Same operation implemented two different ways?
-- Implicit assumptions in Module A that Module B violates?
+**The Editor** reviews the full merged diff for conceptual consistency. Skip for small changes (single worktree, nothing to normalize).
 
-Skip for small changes (single worktree, nothing to normalize).
+Read the Editor's SKILL.md at `.claude/skills/insight-editor/SKILL.md`. Construct the brief by pasting:
+1. The Editor's Identity and Method sections (from SKILL.md)
+2. The Rules section (from SKILL.md)
+3. The specific context:
+   - The full merged diff
+   - Key values on naming/consistency from VALUES.md (if they exist)
 
-Brief: "You are The Editor. One word, one meaning, no exceptions. Read the merged diff and find where two builders used different words for the same thing. One name survives. The other gets cut. Report inconsistencies with the recommended canonical form. Be terse — if it's consistent, say so and stop.
+**Output**: `.insightsLoop/current/normalization.md`
 
-[PASTE KEY VALUES on naming if they exist]"
-
-**Output**: `.insightsLoop/current/normalization.md` — list of inconsistencies with recommended fixes, or "Clean — no inconsistencies found."
+**IMPORTANT: Write `normalization.md` immediately** after the Editor agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
 Apply normalization fixes before verification.
 
@@ -212,32 +243,39 @@ Two agents run in parallel on the merged diff:
 
 **The Storm — Adversarial Review (Opus)**:
 
-Brief: "You are The Storm. You find the leak before the sea does. You don't care how clever the design is. You care what happens when the inputs are wrong, the network drops, and the user does something no one anticipated. Find irreversible decisions, implicit assumptions, and failure modes under partial state. Be specific — name the file, line, and scenario. Write findings as a markdown table.
+Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md`. Construct the brief by pasting:
+1. The Storm's Identity and Method sections (from SKILL.md)
+2. The Rules section (from SKILL.md)
+3. The specific context:
+   - The full merged diff
+   - VALUES.md content (full)
+   - Feature context: 1-2 sentences from plan Intent
 
-[PASTE KEY VALUES so you can check code against them]"
+Output: `.insightsLoop/current/storm-report.md` (format defined in Storm's SKILL.md)
 
-Output: `.insightsLoop/current/storm-report.md`:
+**IMPORTANT: Write `storm-report.md` immediately.** When the Storm agent returns, write its findings to `.insightsLoop/current/storm-report.md` before proceeding. Do not proceed to Fix until the file exists on disk. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
-```markdown
-# Storm Report
+**The Cartographer — Edge Case Hunter (Sonnet)** — invoke `/insight-edge-case-hunter` as the actual skill (use the Skill tool, not a general-purpose agent). Pass the merged diff as input. The Cartographer's SKILL.md defines her method and output format — do not paraphrase or substitute with an ad-hoc brief.
 
-| Location | Issue | Severity | Suggestion |
-|----------|-------|----------|------------|
-| `src/lib/auth.ts:45` | Token validation skips issuer check | critical | Add issuer claim verification |
-```
+**Skip condition:** If the story is visual-only (layout, CSS, copy changes) with no new code paths, skip the Cartographer entirely. Mechanical path enumeration adds nothing when no branches exist to enumerate — Storm carries verification alone. Write an empty `edge-cases.md` (header only) for the archive and note "Skipped: visual-only change" at the top.
 
-**The Cartographer — Edge Case Hunter (Sonnet)** — invoke `/edge-case-hunter`:
-- Exhaustive path enumeration on the diff
-- Output: `.insightsLoop/current/edge-cases.md` — markdown table per the Cartographer's format
-- Empty report (header only, no rows) is valid
+Output: `.insightsLoop/current/edge-cases.md` — empty report (header only, no rows) is valid.
+
+**IMPORTANT: Write `edge-cases.md` immediately.** When the Cartographer returns, write its findings to `.insightsLoop/current/edge-cases.md` before proceeding. Agent output alone is not persistent.
 
 ### The Monkey at Ship
 
-Launch the Monkey agent with:
+Launch the Monkey agent (Opus) with:
 - Context: merged diff + storm-report.md + edge-cases.md
 - Step: "ship"
 
-Brief: "You are The Monkey. Read the merged diff, the Storm's report, and the Cartographer's map. Read `VALUES.md` if it exists. Pick one technique and find the operational edge case that works in tests but fails at 3am. Write your finding as markdown."
+Brief: "You are The Monkey. Read the merged diff, the Storm's report, and the Cartographer's map. Read `VALUES.md` if it exists.
+
+Your arsenal: Assumption Flip, Hostile Input, Existence Question, Scale Shift, Time Travel, Cross-Seam Probe, Requirement Inversion, Delete Probe. Best techniques for Ship: **Time Travel, Scale Shift, Hostile Input**.
+
+Previous Monkey findings this run: [1-line summary of monkey-frame.md, monkey-tdd.md, and monkey-build.md findings]. Pick a different target from all previous findings.
+
+Find the operational edge case that works in tests but fails at 3am. Pick one technique and apply it with specificity — name the file, function, line, scenario. Write your finding using the Monkey output format."
 
 Output: `.insightsLoop/current/monkey-ship.md`
 
@@ -299,7 +337,7 @@ Then archive the run:
 3. Delete: `frame.md`, `normalization.md`, `edge-cases.md`
 4. Rename `.insightsLoop/current/` → `.insightsLoop/run-NNNN-feature-name/`
 
-Present summary to user. Suggest next: run `/retro` to capture learnings.
+Present summary to user. Suggest next: run `/insight-retro` to capture learnings.
 
 ## Error Handling
 

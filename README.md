@@ -1,10 +1,26 @@
 # InsightsLoop
 
-A lean development loop for human+AI collaboration. Seven skills, one crew.
+An opinionated engine for shipping quality, minimalist software with less drift.
 
 ```
 /plan → /devloop (or /devloopfast) → /edge-case-hunter → /retro
 ```
+
+## Why InsightsLoop
+
+Most AI dev tools give you options. Pick your workflow. Configure your pipeline. Choose your agents. That flexibility is the problem — it's where drift starts.
+
+InsightsLoop takes the opposite approach: **one pipeline, no options.** The engine decides which agents run, what gets reviewed, when chaos hits. You don't configure it. You trust it or you use something else.
+
+This works better for three reasons:
+
+1. **Friction prevents drift.** Every feature passes through gates — TDD contracts, adversarial review, chaos testing. You can't skip them. If everything is going well, nothing is going well. The friction is what keeps your code honest.
+
+2. **Opinions are faster than decisions.** Weekend builders don't have time to evaluate five approaches. The engine picks one — the right one — and you ship. Less deciding, more building.
+
+3. **Quality at the gate, not after the fact.** Untested code doesn't leave the engine. The Monkey breaks what you thought was solid. The Storm finds the leak before production does. By the time code ships, it's been challenged from every angle.
+
+The full manifesto is in [VALUES.md](VALUES.md) — 14 values across Product, Engineering, UX, and Security that define what the engine enforces on every project it builds. The [TDD-MATRIX.md](TDD-MATRIX.md) defines when to test first vs. after.
 
 ## The Crew
 
@@ -108,9 +124,38 @@ Active run in `.insightsLoop/current/`. Archived to `.insightsLoop/run-NNNN-feat
 
 Copy skill directories to `.claude/skills/` or install as a plugin.
 
-## Values
+## The Manifesto
 
-Every skill reads `VALUES.md` and `TDD-MATRIX.md` from the repo root before execution. Drop these files in any project and the crew adapts. The Monkey uses values offensively — she catches the crew not following them.
+InsightsLoop is built on [14 values across 4 layers](VALUES.md) — Product, Engineering, UX, and Security. These aren't aspirational. They're operational. Every skill loads them before execution. Every agent enforces them. The Monkey uses them offensively — she catches the crew not following them.
+
+The product values are the root. Everything else traces back:
+
+| Value | Layer |
+|:---|:---|
+| "One pipeline. No options." | Product |
+| "Friction is the feature." | Product |
+| "Ship less, ship right." | Product |
+| "Weekend scale." | Product |
+| "Three lines beat a clever abstraction." | Engineering |
+| "Read it top to bottom or rewrite it." | Engineering |
+| "Delete before you add." | Engineering |
+| "Untested code doesn't leave the engine." | Engineering |
+| "Useful on first load." | UX |
+| "Content over chrome." | UX |
+| "Subtract until it breaks, then add one back." | UX |
+| "Validate at the door." | Security |
+| "No secrets in code. Ever." | Security |
+| "Default closed." | Security |
+
+Every value has a kill list — specific decisions it prevents. See [VALUES.md](VALUES.md) for the full table.
+
+The [TDD-MATRIX.md](TDD-MATRIX.md) complements the manifesto — it defines when to test first vs. after, and the engine enforces it as a gate, not a suggestion.
+
+## Built with AssertValues
+
+These values weren't hand-written. They were discovered through [AssertValues](https://assertvalues.dev/) — a Claude Code skill that finds sharp, opinionated values through conversation. It surfaces the tensions in your project, derives values that actually constrain, and tests every one against a sharpness criteria: if it doesn't make you say no to something, it's not a value.
+
+You can use it on your own projects: install the skill, run `/assertvalues`, and have a conversation about what your project cares about. It produces a `VALUES.md` that works as source code for AI agents — values first, everything else derives from them. Learn more at [assertvalues.dev](https://assertvalues.dev/).
 
 ## Known Limitations
 

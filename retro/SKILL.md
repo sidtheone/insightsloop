@@ -1,6 +1,6 @@
 ---
-name: retro
-description: "Post-build retrospective for cross-session learning. Captures what went right, what went wrong, and what to change. Updates PATTERNS.md and project memory so the same mistakes don't repeat. Use after completing a feature, fixing a bug, or finishing a /devloop cycle. Trigger on: 'retro', 'what did we learn', 'retrospective', 'capture learnings', or when /devloop suggests running it."
+name: insight-retro
+description: "Post-build retrospective for cross-session learning. Captures what went right, what went wrong, and what to change. Updates PATTERNS.md and project memory so the same mistakes don't repeat. Use after completing a feature, fixing a bug, or finishing a /insight-devloop cycle. Trigger on: 'retro', 'what did we learn', 'retrospective', 'capture learnings', or when /insight-devloop suggests running it."
 model: sonnet
 ---
 
@@ -39,7 +39,7 @@ The Lookout can also look across multiple runs to spot patterns. If `.insightsLo
 
 ### 2. Ask Three Questions
 
-Present to user:
+Use the `AskUserQuestion` tool to present findings and gather input:
 
 **What went right?**
 - What decisions saved time?
@@ -100,7 +100,7 @@ Example: `2026-03-10 embed-widget: Parallel agents without worktree isolation ca
 
 - Keep it short. If the retro takes longer than 5 minutes, it's too heavy.
 - Only write down things that will change future behavior. "It went well" isn't actionable.
-- Don't update files the user hasn't approved. Present changes, get confirmation, then write.
+- Don't update files the user hasn't approved. Use the `AskUserQuestion` tool to present proposed changes and get confirmation before writing.
 - An empty retro is valid. If nothing was learned, say so and move on.
 - Always check the Monkey's performance. She's the differentiator — if she's not earning her keep, the retro should say so.
 - Look across runs when possible. Single-run retros are useful. Multi-run pattern detection is where the real compounding happens.
