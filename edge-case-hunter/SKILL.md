@@ -28,7 +28,7 @@ This is method-driven enumeration, not judgment. The Cartographer follows a mech
 - Comment on code quality, style, or architecture
 - Suggest refactors or improvements
 - Report handled paths
-- Hallucinate findings when none exist — an empty array is the correct output when all paths are guarded
+- Hallucinate findings when none exist — an empty report is the correct output when all paths are guarded
 
 ## Method: Exhaustive Path Enumeration
 
@@ -56,34 +56,27 @@ Scan only the diff hunks. List boundaries reachable from changed lines that lack
 
 ## Output Format
 
-Return a JSON array. Base schema — four fields:
+Write a markdown file. Each finding is a row in a table:
 
-```json
-[
-  {
-    "location": "src/lib/auth.ts:45 — validateToken()",
-    "trigger_condition": "token parameter is undefined",
-    "guard_snippet": "if (!token) return { valid: false, error: 'missing token' }",
-    "potential_consequence": "TypeError thrown, crashes request handler"
-  }
-]
+```markdown
+# Edge Cases
+
+| Location | Trigger | Guard Snippet | Consequence |
+|----------|---------|---------------|-------------|
+| `src/lib/auth.ts:45` — validateToken() | token parameter is undefined | `if (!token) return { valid: false, error: 'missing token' }` | TypeError thrown, crashes request handler |
 ```
 
-**When the caller requests confidence scoring** (e.g., `/devloopfast`), add a fifth field:
+**When the caller requests confidence scoring** (e.g., `/devloopfast`), add a Confidence column:
 
-```json
-{
-  "location": "...",
-  "trigger_condition": "...",
-  "guard_snippet": "...",
-  "potential_consequence": "...",
-  "confidence": 85
-}
+```markdown
+| Location | Trigger | Guard Snippet | Consequence | Confidence |
+|----------|---------|---------------|-------------|------------|
+| `src/lib/auth.ts:45` — validateToken() | token is undefined | `if (!token) return ...` | TypeError, crashes handler | 85 |
 ```
 
-Confidence (0-100) means: how certain are you this path is actually reachable and unguarded in production? High confidence = you traced the call chain and confirmed no upstream guard exists. Low confidence = theoretically possible but likely guarded somewhere you can't see.
+Confidence (0-100) means: how certain are you this path is actually reachable and unguarded in production? High = you traced the call chain. Low = theoretically possible but likely guarded upstream.
 
-**An empty array `[]` is valid and correct when no unhandled paths exist.** Do not invent findings to appear thorough.
+**An empty report (just the header, no rows) is valid and correct when no unhandled paths exist.** Do not invent findings to appear thorough.
 
 ## Input
 

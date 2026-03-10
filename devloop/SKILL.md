@@ -14,9 +14,9 @@ A 4-step build loop that takes plan artifacts and ships verified code. Each step
 | TDD | **The Sentinel** | Opus | Failing test suite |
 | Builder | **The Shipwright** | Sonnet | Passing implementation in worktree |
 | Normalize | **The Editor** | Opus | `normalization.md` |
-| Adversarial | **The Storm** | Opus | `storm-report.json` |
-| Edge Cases | **The Cartographer** | Sonnet | `edge-cases.json` |
-| Chaos | **The Monkey** | Opus | Structured finding per step |
+| Adversarial | **The Storm** | Opus | `storm-report.md` |
+| Edge Cases | **The Cartographer** | Sonnet | `edge-cases.md` |
+| Chaos | **The Monkey** | Opus | `monkey-[step].md` per step |
 | Retro | **The Lookout** | Sonnet | Learnings (separate skill) |
 
 ## Phase 0: Load Project Values
@@ -32,26 +32,56 @@ How to brief agents with values:
 
 ## Artifact Directory
 
-All build artifacts go in `.insightsLoop/` at the repo root. Create it if it doesn't exist:
+All build artifacts go in `.insightsLoop/current/` during the active run. Create it if it doesn't exist.
 
 ```
 .insightsLoop/
-├── plan.md              (from /plan, input)
-├── frame.md             (from Frame)
-├── monkey-frame.json    (from Monkey at Frame)
-├── monkey-tdd.json      (from Monkey at TDD)
-├── monkey-build.json    (from Monkey at Build)
-├── monkey-ship.json     (from Monkey at Ship)
-├── storm-report.json    (from Storm)
-├── edge-cases.json      (from Cartographer)
-└── normalization.md     (from Editor)
+├── current/                  ← active run (working directory)
+│   ├── plan.md
+│   ├── frame.md
+│   ├── monkey-frame.md
+│   ├── monkey-tdd.md
+│   ├── monkey-build.md
+│   ├── monkey-ship.md
+│   ├── storm-report.md
+│   ├── edge-cases.md
+│   └── normalization.md
+├── run-0001-embed-widget/    ← completed run (archived)
+│   ├── summary.md
+│   ├── plan.md
+│   ├── monkey-frame.md
+│   ├── monkey-tdd.md
+│   ├── monkey-build.md
+│   ├── monkey-ship.md
+│   └── storm-report.md
+└── run-0002-auth-refresh/
+    └── ...
 ```
 
-Before starting a new run, archive or delete the previous `.insightsLoop/` contents. Stale artifacts from previous builds must not pollute the current run.
+**Starting a run:** If `.insightsLoop/current/` already has files, warn the user — a previous run wasn't archived. Ask whether to archive it first or discard it.
+
+**Completing a run:** Step 4 (Done) writes `summary.md`, keeps the minimum archive set, discards operational artifacts, and renames `current/` to `run-NNNN-feature-name/`.
+
+**Run naming:** `run-NNNN-feature-name` where NNNN is zero-padded sequential (look at existing `run-*` directories to determine the next number), and feature-name is derived from plan.md's `# Plan: [Feature Name]` heading, lowercased and hyphenated.
+
+## What to Keep (Archive)
+
+These survive into the numbered run directory:
+- `plan.md` — intent. Without this, the rest means nothing.
+- `monkey-*.md` — her performance over time is how you tune the system.
+- `storm-report.md` — real issues found.
+- `summary.md` — the manifest of what happened.
+
+## What to Discard
+
+These are deleted when `current/` becomes `run-NNNN/`:
+- `frame.md` — operational, triage is captured in summary.md.
+- `normalization.md` — fixes already applied.
+- `edge-cases.md` — either fixed or covered by storm-report.md.
 
 ## Prerequisites
 
-This skill expects `plan.md` (with a `## Challenge` section) — either in `.insightsLoop/` or the repo root. If it doesn't exist, **do not proceed**. Tell the user to run `/plan` first. This is a hard gate — the entire downstream chain runs on thin air without a plan.
+This skill expects `plan.md` (with a `## Challenge` section) — either in `.insightsLoop/current/` or the repo root. If it doesn't exist, **do not proceed**. Tell the user to run `/plan` first. This is a hard gate — the entire downstream chain runs on thin air without a plan.
 
 ## Definitions
 
@@ -70,7 +100,7 @@ Read `plan.md`. Confirm the triage label from the `## Challenge` section:
 | Medium | Multi-file, existing patterns | All steps |
 | Architectural | New interfaces, schema changes, public API | All steps, sequential challenge |
 
-**Output artifact**: `.insightsLoop/frame.md` — confirmed triage label, task list with parallelization plan (which tasks share a worktree, which are independent), and which test files belong to which Shipwright.
+**Output artifact**: `.insightsLoop/current/frame.md` — confirmed triage label, task list with parallelization plan (which tasks share a worktree, which are independent), and which test files belong to which Shipwright.
 
 Present to user. Wait for approval.
 
@@ -80,11 +110,11 @@ Launch the Monkey agent with:
 - Context: the plan.md content and the frame.md you just produced
 - Step: "frame"
 
-Brief: "You are The Monkey. Read `.insightsLoop/plan.md` and `.insightsLoop/frame.md`. Read `VALUES.md` if it exists. Pick one technique from your arsenal and challenge the triage decision or scope boundaries. Produce one structured JSON finding."
+Brief: "You are The Monkey. Read the plan and the frame. Read `VALUES.md` if it exists. Pick one technique from your arsenal and challenge the triage decision or scope boundaries. Write your finding as markdown."
 
-Output: `.insightsLoop/monkey-frame.json`
+Output: `.insightsLoop/current/monkey-frame.md`
 
-Present the Monkey's finding to the user alongside the frame. If `survived: false`, discuss before proceeding.
+Present the Monkey's finding to the user alongside the frame. If `Survived: no`, discuss before proceeding.
 
 ## Step 2: Build
 
@@ -112,11 +142,11 @@ Launch the Monkey agent with:
 - Context: the test suite the Sentinel just wrote + plan.md
 - Step: "tdd"
 
-Brief: "You are The Monkey. Read the test suite the Sentinel just wrote and the plan. Read `VALUES.md` if it exists. Pick one technique — probably Hostile Input or Requirement Inversion — and find the test suite's blind spot. Produce one structured JSON finding."
+Brief: "You are The Monkey. Read the test suite the Sentinel just wrote and the plan. Read `VALUES.md` if it exists. Pick one technique and find the test suite's blind spot. Write your finding as markdown."
 
-Output: `.insightsLoop/monkey-tdd.json`
+Output: `.insightsLoop/current/monkey-tdd.md`
 
-If `survived: false` and the finding is specific enough to act on, add the test. If `survived: true`, move on. Present the finding to the user either way.
+If `Survived: no` and the finding is specific enough to act on, add the test. If `Survived: yes`, move on. Present the finding to the user either way.
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
@@ -138,11 +168,11 @@ Launch the Monkey agent with:
 - Context: summary of what each worktree built, file lists from each
 - Step: "build"
 
-Brief: "You are The Monkey. Read what each Shipwright built. Read `VALUES.md` if it exists. Pick one technique — probably Cross-Seam Probe — and find where two worktrees made different assumptions about a shared concept. Produce one structured JSON finding."
+Brief: "You are The Monkey. Read what each Shipwright built. Read `VALUES.md` if it exists. Pick one technique and find where two worktrees made different assumptions about a shared concept. Write your finding as markdown."
 
-Output: `.insightsLoop/monkey-build.json`
+Output: `.insightsLoop/current/monkey-build.md`
 
-If `survived: false`, investigate the seam before merging. If `survived: true`, proceed to merge.
+If `Survived: no`, investigate the seam before merging. If `Survived: yes`, proceed to merge.
 
 **Output artifact**: Passing implementations in worktrees.
 
@@ -172,7 +202,7 @@ Brief: "You are The Editor. One word, one meaning, no exceptions. Read the merge
 
 [PASTE KEY VALUES on naming if they exist]"
 
-**Output**: `.insightsLoop/normalization.md` — list of inconsistencies with recommended fixes, or "Clean — no inconsistencies found."
+**Output**: `.insightsLoop/current/normalization.md` — list of inconsistencies with recommended fixes, or "Clean — no inconsistencies found."
 
 Apply normalization fixes before verification.
 
@@ -182,41 +212,43 @@ Two agents run in parallel on the merged diff:
 
 **The Storm — Adversarial Review (Opus)**:
 
-Brief: "You are The Storm. You find the leak before the sea does. You don't care how clever the design is. You care what happens when the inputs are wrong, the network drops, and the user does something no one anticipated. Find irreversible decisions, implicit assumptions, and failure modes under partial state. Be specific — name the file, line, and scenario. Output as structured JSON.
+Brief: "You are The Storm. You find the leak before the sea does. You don't care how clever the design is. You care what happens when the inputs are wrong, the network drops, and the user does something no one anticipated. Find irreversible decisions, implicit assumptions, and failure modes under partial state. Be specific — name the file, line, and scenario. Write findings as a markdown table.
 
 [PASTE KEY VALUES so you can check code against them]"
 
-Output: `.insightsLoop/storm-report.json` — structured JSON array:
-```json
-[{"location": "", "issue": "", "severity": "critical|high|medium|low", "suggestion": ""}]
+Output: `.insightsLoop/current/storm-report.md`:
+
+```markdown
+# Storm Report
+
+| Location | Issue | Severity | Suggestion |
+|----------|-------|----------|------------|
+| `src/lib/auth.ts:45` | Token validation skips issuer check | critical | Add issuer claim verification |
 ```
 
 **The Cartographer — Edge Case Hunter (Sonnet)** — invoke `/edge-case-hunter`:
 - Exhaustive path enumeration on the diff
-- Output: `.insightsLoop/edge-cases.json` — structured JSON array:
-```json
-[{"location": "", "trigger_condition": "", "guard_snippet": "", "potential_consequence": ""}]
-```
-- Empty array `[]` is valid (no hallucinated findings)
+- Output: `.insightsLoop/current/edge-cases.md` — markdown table per the Cartographer's format
+- Empty report (header only, no rows) is valid
 
 ### The Monkey at Ship
 
 Launch the Monkey agent with:
-- Context: merged diff + storm-report.json + edge-cases.json
+- Context: merged diff + storm-report.md + edge-cases.md
 - Step: "ship"
 
-Brief: "You are The Monkey. Read the merged diff, the Storm's report, and the Cartographer's map. Read `VALUES.md` if it exists. Pick one technique — probably Time Travel or Scale Shift — and find the operational edge case that works in tests but fails at 3am. Produce one structured JSON finding."
+Brief: "You are The Monkey. Read the merged diff, the Storm's report, and the Cartographer's map. Read `VALUES.md` if it exists. Pick one technique and find the operational edge case that works in tests but fails at 3am. Write your finding as markdown."
 
-Output: `.insightsLoop/monkey-ship.json`
+Output: `.insightsLoop/current/monkey-ship.md`
 
-If `survived: false` and confidence is high, treat it like a Storm finding and fix it. Present all Monkey findings to the user regardless.
+If `Survived: no` and confidence is high, treat it like a Storm finding and fix it. Present all Monkey findings to the user regardless.
 
 ### 3d: Fix
 
 Triage and apply fixes:
 1. Storm critical/high severity first
 2. Cartographer findings that would corrupt data or crash at runtime
-3. Monkey findings where `survived: false` and confidence is high
+3. Monkey findings where `Survived: no` and confidence is high
 4. Normalization fixes
 5. Everything else goes to backlog
 
@@ -232,13 +264,42 @@ Run full test suite + typecheck. Confirm everything passes.
 
 ## Step 4: Done
 
-Summarize:
-- What was built
-- Files modified/created
-- Test count before → after
-- Any decisions made during build
-- Monkey report: what she challenged, what survived, what didn't
-- Suggested next: run `/retro` to capture learnings
+Write `.insightsLoop/current/summary.md`:
+
+```markdown
+# Run Summary
+
+**Feature:** [from plan.md title]
+**Date:** [ISO date]
+**Triage:** [small/medium/architectural]
+
+## What Was Built
+[Brief description]
+
+## Files
+- Created: [list]
+- Modified: [list]
+
+## Tests
+- Before: [count]
+- After: [count]
+
+## Findings
+- Storm: [X critical, Y high, Z medium, W low]
+- Cartographer: [X findings]
+- Monkey: [X challenges, Y survived, Z didn't]
+
+## Decisions
+[Any decisions made during the build]
+```
+
+Then archive the run:
+1. Determine next run number (look at existing `run-*` dirs)
+2. Keep: `summary.md`, `plan.md`, `monkey-*.md`, `storm-report.md`
+3. Delete: `frame.md`, `normalization.md`, `edge-cases.md`
+4. Rename `.insightsLoop/current/` → `.insightsLoop/run-NNNN-feature-name/`
+
+Present summary to user. Suggest next: run `/retro` to capture learnings.
 
 ## Error Handling
 
@@ -263,11 +324,11 @@ When things go wrong:
 ## Rules
 
 - **Never run TDD and build in the same agent.** This is the single most important rule. Correlated failure is silent and deadly.
-- **The Monkey is a real agent.** Launch her with a brief, a context, and expect structured JSON back. She is not inline narrative. She is not optional. She is not decoration.
+- **The Monkey is a real agent.** Launch her with a brief, a context, and expect structured markdown back. She is not inline narrative. She is not optional. She is not decoration.
 - **Always use worktree isolation for parallel agents.** Context quality degrades in shared sessions.
-- **Empty edge case array is valid.** The Cartographer must not hallucinate findings to justify existence.
+- **Empty edge case report is valid.** The Cartographer must not hallucinate findings to justify existence.
 - **Human approves at Frame.** Don't start building without explicit go-ahead.
 - **Plan is a hard gate.** No plan.md = no build. Non-negotiable.
 - **Paste values into briefs.** "Read VALUES.md" is not enough for subagents. Paste the relevant content into each brief so it's in their context.
-- **Clean .insightsLoop/ between runs.** Stale artifacts are silent poison.
-- **Stop condition for findings.** Fix critical and high severity from Storm. Fix data-corruption and crash findings from Cartographer. Fix `survived: false` high-confidence Monkey findings. The rest goes to backlog.
+- **Archive runs, don't delete.** Completed runs move from `current/` to `run-NNNN-feature-name/`. History is how the loop improves.
+- **Stop condition for findings.** Fix critical and high severity from Storm. Fix data-corruption and crash findings from Cartographer. Fix `Survived: no` high-confidence Monkey findings. The rest goes to backlog.

@@ -29,16 +29,16 @@ Every step has a persona. These aren't decoration — they define how each agent
    - **Frame**: Triage (small/medium/architectural), parallelization plan
    - **Build**: The Sentinel writes tests (Opus) → The Shipwright builds (Sonnet, parallel worktrees)
    - **Ship**: Merge → The Editor normalizes → The Storm + The Cartographer verify in parallel → fix
-   - **The Monkey**: Launches as a real agent at every step. Structured output. Specific chaos.
-   - **Done**: Summary + suggest `/retro`
+   - **The Monkey**: Launches as a real agent at every step. Structured markdown output. Specific chaos.
+   - **Done**: Write summary, archive run, suggest `/retro`
 
-3. **`/devloopfast`** — Speed mode. Same crew, same Monkey. Auto-triages small/medium (no approval gate), confidence-filters all findings at 80+ (Storm, Cartographer, and Monkey). Below-threshold findings saved to `.insightsLoop/filtered-findings.json`, never discarded. The Monkey still launches at every step — she just doesn't block.
+3. **`/devloopfast`** — Speed mode. Same crew, same Monkey. Auto-triages small/medium (no approval gate), confidence-filters all findings at 80+ (Storm, Cartographer, and Monkey). Below-threshold findings saved to `filtered-findings.md`, never discarded. The Monkey still launches at every step — she just doesn't block.
 
 4. **`/monkey`** — The Monkey, standalone. Point her at a file, a plan, a diff, or a decision. She picks one technique from her arsenal, applies it with specificity, and produces a structured finding. Not a reviewer — a disruptor.
 
-5. **`/edge-case-hunter`** — The Cartographer maps every code path mechanically. Called at Ship, also standalone. Structured JSON output.
+5. **`/edge-case-hunter`** — The Cartographer maps every code path mechanically. Called at Ship, also standalone. Markdown table output.
 
-6. **`/retro`** — The Lookout captures what the crew learned. Reads all artifacts including Monkey findings and filtered findings. Evaluates the confidence filter. Updates project knowledge.
+6. **`/retro`** — The Lookout captures what the crew learned. Reads all artifacts including Monkey findings and filtered findings. Evaluates the confidence filter. Looks across multiple runs for patterns. Updates project knowledge.
 
 ## The Monkey
 
@@ -53,31 +53,53 @@ The Monkey is what makes InsightsLoop different. She's not a checklist. She's no
 7. **Requirement Inversion** — what if the user wants the opposite?
 8. **Delete Probe** — what happens if you delete this entirely?
 
-She picks the technique that would hurt most at each step. She produces structured JSON with a `survived` field — because resilience confirmed is as valuable as weakness found. She's unpredictable by design. She never asks the same question twice.
+She picks the technique that would hurt most at each step. Her output includes a `Survived` field — because resilience confirmed is as valuable as weakness found. She's unpredictable by design. She never asks the same question twice.
+
+## Run History
+
+Every build run is archived in `.insightsLoop/`:
+
+```
+.insightsLoop/
+├── current/                  ← active run
+├── run-0001-embed-widget/    ← archived
+│   ├── summary.md
+│   ├── plan.md
+│   ├── monkey-frame.md
+│   ├── monkey-tdd.md
+│   ├── monkey-build.md
+│   ├── monkey-ship.md
+│   └── storm-report.md
+├── run-0002-auth-refresh/
+└── ...
+```
+
+Runs are named `run-NNNN-feature-name`. The retro reads across runs to spot recurring patterns. All artifacts are markdown — readable by humans, agents, and GitHub alike.
 
 ## Design Principles
 
 - **The Sentinel and The Shipwright are never the same agent.** Prevents correlated failure.
-- **The Monkey is a real agent, not inline narrative.** Launched with a brief, receives context, returns structured JSON. Opus model. She earns her place through specificity, not charm.
+- **The Monkey is a real agent, not inline narrative.** Launched with a brief, receives context, returns structured markdown. Opus model.
 - **Each Shipwright works in an isolated worktree.** Clean context per agent.
 - **The Sentinel never reads the Challenge section.** Independent failure mode derivation.
 - **Values are pasted into agent briefs.** Not "read VALUES.md" — actually paste the content so subagents have it in context.
-- **All artifacts live in `.insightsLoop/`.** Cleaned between runs. No stale data.
+- **All artifacts are markdown.** Readable by humans, agents, and GitHub. No JSON.
+- **Runs are archived, not deleted.** History is how the loop improves.
 - **Plan is a hard gate.** No plan = no build. Non-negotiable.
 - **Each step produces an artifact consumed by the next.** Pipeline, not ceremony.
-- **The Cartographer's empty map is valid.** No hallucinated findings.
-- **The Monkey's `survived: true` is valid.** Resilience confirmed is signal, not silence.
+- **The Cartographer's empty report is valid.** No hallucinated findings.
+- **The Monkey's `Survived: yes` is valid.** Resilience confirmed is signal, not silence.
 - **Error handling is explicit.** Merge conflicts, test failures, and compile errors stop the loop and go to the human.
 
 ## Artifact Chain
 
 ```
-plan.md → frame.md → test suite → worktrees → storm-report.json + edge-cases.json → shippable diff
+plan.md → frame.md → test suite → worktrees → storm-report.md + edge-cases.md → shippable diff
                 ↑                        ↑              ↑                    ↑
-            monkey-frame.json    monkey-tdd.json   monkey-build.json   monkey-ship.json
+          monkey-frame.md      monkey-tdd.md   monkey-build.md     monkey-ship.md
 ```
 
-All artifacts in `.insightsLoop/`. Retro reads all of them.
+Active run in `.insightsLoop/current/`. Archived to `.insightsLoop/run-NNNN-feature-name/` on completion. Retro reads all of them.
 
 ## Install
 

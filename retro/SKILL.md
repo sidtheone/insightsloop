@@ -22,18 +22,20 @@ Before starting, check the repo root for `VALUES.md` and `TDD-MATRIX.md`. If the
 
 ### 1. Gather Context
 
-Read from `.insightsLoop/` directory:
+Find the most recent run in `.insightsLoop/`. Look for the highest-numbered `run-*` directory, or `current/` if a run just finished but hasn't been archived yet.
+
+Read from the run directory:
+- `summary.md` — the manifest of what happened
 - `plan.md` — what was intended and what risks were identified
-- `frame.md` — triage decision and parallelization plan
-- `storm-report.json` — what The Storm found (if it exists)
-- `edge-cases.json` — what The Cartographer found (if it exists)
-- `normalization.md` — what The Editor found (if it exists)
-- `monkey-*.json` — all Monkey findings across every step
-- `filtered-findings.json` — everything that was below 80 confidence (if devloopfast was used)
+- `storm-report.md` — what The Storm found (if it exists)
+- `monkey-*.md` — all Monkey findings across every step
+- `filtered-findings.md` — everything below 80 confidence (if devloopfast was used)
 
 Also read:
 - Git log — what was actually committed
 - Test results — what passed/failed
+
+The Lookout can also look across multiple runs to spot patterns. If `.insightsLoop/` has 3+ archived runs, compare: are the same types of findings recurring? Is the Monkey catching different things each time?
 
 ### 2. Ask Three Questions
 
@@ -48,7 +50,7 @@ Present to user:
 - What surprised us?
 - What did we build wrong and have to redo?
 - What did the Storm, Cartographer, or Monkey miss?
-- Was the triage accurate? (Check frame.md — did a "small" change turn out medium?)
+- Was the triage accurate? (Check summary.md — did a "small" change turn out medium?)
 
 **What do we change?**
 - New patterns to add to PATTERNS.md?
@@ -58,7 +60,7 @@ Present to user:
 
 ### 2b. Evaluate the Filter (devloopfast only)
 
-If `filtered-findings.json` exists, review it:
+If `filtered-findings.md` exists, review it:
 - Were any filtered findings actually important? (False negatives from the 80 threshold)
 - Were surfaced findings mostly noise? (Threshold too low)
 - Did the Monkey catch anything the Storm and Cartographer missed?
@@ -68,11 +70,11 @@ This is how the confidence filter self-corrects over time.
 
 ### 2c. Evaluate the Monkey
 
-Review all `monkey-*.json` files:
+Review all `monkey-*.md` files:
 - Which techniques did she use? Was there variety or repetition?
 - How many findings survived vs didn't?
-- Did any `survived: false` finding lead to a real fix?
-- Did any `survived: true` finding give the crew confidence in a decision?
+- Did any `Survived: no` finding lead to a real fix?
+- Did any `Survived: yes` finding give the crew confidence in a decision?
 - Is the Monkey earning her keep or producing noise?
 
 ### 3. Update Project Knowledge
@@ -101,3 +103,4 @@ Example: `2026-03-10 embed-widget: Parallel agents without worktree isolation ca
 - Don't update files the user hasn't approved. Present changes, get confirmation, then write.
 - An empty retro is valid. If nothing was learned, say so and move on.
 - Always check the Monkey's performance. She's the differentiator — if she's not earning her keep, the retro should say so.
+- Look across runs when possible. Single-run retros are useful. Multi-run pattern detection is where the real compounding happens.
