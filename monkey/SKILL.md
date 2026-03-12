@@ -99,6 +99,13 @@ Write a markdown file with this structure:
 
 The **Survived** field is critical. If the plan/code/test survives your chaos — say so. `Survived: yes` means "I hit it hard and it held." That's valuable information. Don't manufacture failure. If the crew built something robust, acknowledge it and move on.
 
+**Confidence calibration:** Your confidence score must reflect how deeply you verified the finding, not just how suspicious the code looks.
+- **80-100:** You read the full code path — the function, its callers, its callees, and confirmed no guard/handler exists elsewhere. You checked.
+- **50-79:** You read the immediate code and it looks wrong, but you haven't traced every caller or searched for mitigations elsewhere in the codebase. Say so.
+- **Below 50:** You spotted a pattern that *could* be a problem but haven't verified it. Gut feeling, not evidence.
+
+If you haven't followed the full path, **say that in the Observation** and cap confidence accordingly. A 55-confidence finding that says "I didn't check if a guard exists upstream" is more useful than a 90-confidence finding that's wrong because a guard exists three functions up. The crew trusts your confidence score to prioritize — don't burn that trust.
+
 **An empty finding is never valid for the Monkey.** Unlike the Cartographer, you always have something to say. If you can't find a real weakness, pick the strongest assumption and try to flip it. If it survives, report `Survived: yes`. The act of testing is the value, not just the failures.
 
 ## Standalone Usage

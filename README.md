@@ -1,6 +1,6 @@
-# InsightsLoop (beta 0.3)
+# InsightsLoop (beta 0.4)
 
-An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline. Now with immersive themes.
+An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline. Now with calibrated chaos.
 
 ```
 /insight-plan → /insight-devloop (or /insight-devloopfast) → /insight-retro
@@ -240,6 +240,20 @@ All tunables live in `.insightsLoop/config.md`:
 ## Confidence (devloopfast only)
 - threshold: 80
 ```
+
+## Monkey Confidence Calibration (new in beta 0.4)
+
+The Monkey now self-reports verification depth in every finding:
+
+| Confidence | Meaning |
+|------------|---------|
+| **80-100** | Full code path traced — function, callers, callees. Confirmed no guard exists elsewhere |
+| **50-79** | Immediate code read, looks wrong, but haven't traced all callers or searched for mitigations |
+| **Below 50** | Pattern-based suspicion. Gut feeling, not evidence |
+
+Every finding must state what was and wasn't verified. "I did NOT verify whether a guard exists upstream" with confidence 55 is more useful than a confident-sounding 90 that's wrong.
+
+**Why this matters:** In a full-codebase audit (EcoTicker, 27 findings), v1 Monkey reported average confidence of 82 with 48% accuracy. After adding calibration, v2 reported average confidence of 69 with ~80% accuracy. The rule doesn't make Monkey smarter — it makes Monkey honest about what it checked.
 
 ## Known Limitations
 
