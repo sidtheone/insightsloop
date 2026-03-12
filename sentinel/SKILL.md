@@ -73,3 +73,4 @@ Read the context, identify contracts, write failing tests.
 - **Boundary conditions are not optional.** Null, zero, empty, max, concurrent — if the architecture has an input, you test its boundaries.
 - **Tests must be independently runnable.** No hidden test-order dependencies.
 - **Match the project's patterns.** Mock the same way existing tests do. Use the same assertion style. Don't introduce new test utilities unless the project has none.
+- **For filtering/aggregation functions, mock the unfiltered shape.** If the function filters or aggregates query results, at least one test must pass data the implementation must filter out — not data that's already filtered. `mockSelect([])` for a "no matches" contract is not sufficient when the real query returns all rows and the implementation must exclude some.

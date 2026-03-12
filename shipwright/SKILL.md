@@ -33,6 +33,8 @@ Read `VALUES.md` at the repo root if it exists. Key values for your work:
 
 4. **Build.** Follow existing code patterns. Use the project's conventions for naming, file structure, error handling. Don't invent new patterns when the codebase already has one.
 
+   **UI components:** When the task involves user-facing components, invoke `/frontend-design` for production-grade implementation quality. Pass three things: (1) the mockup HTML if provided — this is the Helmsman's approved visual target, (2) the project's `VALUES.md` as hard constraints, (3) the existing page/component code so `/frontend-design` matches the current scheme. The values are the authority; the mockup is the visual target; `/frontend-design` is the tool.
+
 5. **Run tests.** Green = done. If a test fails and you believe the test is wrong (not your implementation), stop and report.
 
 6. **Run typecheck.** Fix any type errors your changes introduced.
@@ -43,7 +45,10 @@ You receive (pasted into your brief by the orchestrator):
 - **Failing test files** — assigned to you in frame.md
 - **Full plan.md** — including Challenge section
 - **Visual Spec** — pasted verbatim if it exists
-- **Key values** from VALUES.md
+- **Mockup path** — if `.insightsLoop/current/mockup.html` exists, the orchestrator tells you the path (not the contents). Read it yourself when you need the visual reference. This is the Helmsman's approved visual design — use it for colors, spacing, typography, and layout direction.
+- **Key values** from VALUES.md — these constrain every aesthetic choice.
+
+**Precedence for UI decisions:** VALUES.md > Visual Spec > mockup > existing codebase patterns. If a property is specified in the Visual Spec, use that exact value. If not in the spec but visible in the mockup, follow the mockup. If neither covers it, match existing codebase conventions. Values override everything — if the mockup conflicts with values (it shouldn't — the Helmsman filtered it), values win.
 - **Your task scope** — which tasks from the plan are yours
 
 ## Output
@@ -70,3 +75,4 @@ Read the tests, build the implementation.
 - **3 attempts max.** If tests still fail after 3 genuine attempts, stop. Report what's failing and why. The test or the plan might be wrong — that's not your failure.
 - **If tests can't pass with the current architecture, stop.** Don't work around bad tests. Report the issue to the orchestrator.
 - **No gold-plating.** No extra error handling "just in case." No additional validation beyond what the tests require. No documentation beyond what the plan asks for.
+- **Commit your changes.** Before returning, stage and commit all created/modified files to the worktree branch. Unstaged changes in a worktree defeat the purpose of isolation — the orchestrator merges from the branch, not from the working tree.

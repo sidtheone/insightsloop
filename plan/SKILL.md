@@ -122,14 +122,22 @@ If user says "whatever you think is best" — give your recommendation and get e
 
 Before designing architecture, check: **Does this story change what the user sees?**
 
-If yes, invoke `/insight-ux` (The Helmsman) before proposing architecture approaches. The Helmsman produces:
+If yes, invoke `/insight-ux` (The Helmsman) before proposing architecture approaches. Pass the Helmsman the **key files list from Phase 2 exploration** so it knows which existing pages and components to read for the current design scheme.
+
+Use the `AskUserQuestion` tool to ask: "This story has a UI surface. Generate a visual HTML mockup (`--mockup`) or keep it structural (ASCII wireframe)?" Options: "Mockup — I want to see a visual preview" / "ASCII — structural wireframe is enough".
+
+If `--mockup`: invoke `/insight-ux --mockup` with the key files list. The Helmsman reads existing pages, produces the 5-section spec, then generates `mockup.html` via `/frontend-design`.
+
+If ASCII: invoke `/insight-ux` without the flag. Standard 5-section output.
+
+The Helmsman produces:
 - User Goal (one sentence)
 - Flow (numbered steps, max 5)
-- Layout (ASCII wireframe, mobile-first)
+- Layout (ASCII wireframe or HTML mockup)
 - Cut List (what to remove and why)
 - Copy (key text strings — titles, empty states, errors, CTAs)
 
-Feed the Helmsman's output into the architecture design — the wireframe constrains what the architects propose. The Helmsman's Layout becomes the foundation for the plan.md Visual Spec section.
+Feed the Helmsman's output into the architecture design — the layout constrains what the architects propose. The Helmsman's Layout becomes the foundation for the plan.md Visual Spec section.
 
 If no (pure backend, data pipeline, infrastructure), skip and proceed to architecture.
 

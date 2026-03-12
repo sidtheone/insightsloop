@@ -1,6 +1,9 @@
 ---
 name: insight-devloopfast
 description: "Speed mode build loop. Same crew, same Monkey, less ceremony. Auto-triages (no approval gate for small/medium), confidence-filters findings (80+ only). The Monkey never sleeps — she just doesn't block. Use when you trust the plan and want to ship fast. Trigger on: 'fast build', 'quick build', 'devloopfast', 'speed mode', 'just build it'."
+model: opus
+disable-model-invocation: true
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npx jest*), Bash(npx tsc*), Bash(git *), Agent, Skill(insight-edge-case-hunter), AskUserQuestion
 ---
 
 # DevLoopFast — Speed Mode
@@ -20,7 +23,6 @@ The Monkey is not ceremony. She's the immune system. She runs at every step as a
 | Monkey | Real agent, blocks on `Survived: no` | Real agent, logs finding, moves on |
 | Storm output | All findings | 80+ confidence only |
 | Cartographer output | All findings | 80+ confidence only |
-| Normalize | Runs for medium+ | Runs for architectural only |
 | Filtered findings | N/A | `filtered-findings.md` |
 
 ## What's NOT Different
@@ -34,21 +36,17 @@ The Monkey is not ceremony. She's the immune system. She runs at every step as a
 - Error handling is the same — merge conflicts, test failures, and typecheck errors still stop the loop.
 - Run archiving is the same — `current/` → `run-NNNN-feature-name/` on completion.
 
-## Phase 0: Load Project Values
+## Step 0: Load Project Values
 
-Same as `/insight-devloop`. Read `VALUES.md` and `TDD-MATRIX.md`. Paste content into agent briefs. The Monkey reads VALUES.md herself.
+Same as `/insight-devloop` Step 0. Read `VALUES.md` and `TDD-MATRIX.md`. Paste content into agent briefs. If they don't exist, omit values-related lines from briefs. The Monkey reads VALUES.md herself.
 
-Also read the crew SKILL.md files (same as devloop):
-- `.claude/skills/insight-sentinel/SKILL.md` — The Sentinel
-- `.claude/skills/insight-shipwright/SKILL.md` — The Shipwright
-- `.claude/skills/insight-storm/SKILL.md` — The Storm
-- `.claude/skills/insight-editor/SKILL.md` — The Editor
-
-Same crew, same identities, same methods. Speed mode changes ceremony, not crew definitions.
+Read each crew SKILL.md right before briefing that crew member (same progressive loading as devloop). Same crew, same identities, same methods. Speed mode changes ceremony, not crew definitions.
 
 Also read `.insightsLoop/config.md` for engine tunables:
 - `monkey_findings_per_step` (default: 1) — if > 1, tell the Monkey to produce N findings per step, each using a different technique
 - `confidence_threshold` (default: 80) — filtering cutoff for Storm, Cartographer, and Monkey findings
+
+**Monkey brief template:** Use the same template as devloop at `.claude/skills/insight-devloop/reference/monkey-brief-template.md`. If `monkey_findings_per_step` > 1, replace "Pick one technique" with "Produce {N} findings, each using a different technique."
 
 ## Artifact Directory
 
@@ -79,6 +77,8 @@ For architectural: use the `AskUserQuestion` tool to present the frame and get a
 
 Launch the Monkey agent. Same brief as `/insight-devloop`. She produces `.insightsLoop/current/monkey-frame.md`.
 
+**IMPORTANT: Write `monkey-frame.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
+
 If `Survived: no`:
 - For architectural: stop and discuss (same as /insight-devloop)
 - For small/medium: log to `filtered-findings.md`, proceed. But if the Monkey's finding would change the triage (e.g., a "small" is actually "medium"), re-triage even in speed mode. Triage correctness is not optional.
@@ -95,6 +95,8 @@ Same as `/insight-devloop`. Read the Sentinel's SKILL.md and construct her brief
 
 Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal (Assumption Flip, Hostile Input, Existence Question, Scale Shift, Time Travel, Cross-Seam Probe, Requirement Inversion, Delete Probe), step-specific technique recommendations, and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-tdd.md`.
 
+**IMPORTANT: Write `monkey-tdd.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
+
 If `Survived: no` and the finding is a concrete test case (not abstract), add the test automatically. If it's abstract or low confidence, log to `filtered-findings.md`. No human gate — the test either gets added by the orchestrator or it doesn't.
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
@@ -105,6 +107,8 @@ Same as `/insight-devloop`. Read the Shipwright's SKILL.md and construct each br
 
 Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal, step-specific technique recommendations (Cross-Seam Probe, Time Travel, Scale Shift), and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-build.md`.
 
+**IMPORTANT: Write `monkey-build.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
+
 If `Survived: no`, log to `filtered-findings.md`. Proceed to merge regardless — but if the finding specifically identifies a naming mismatch between worktrees, flag it for the merge step so it gets resolved there.
 
 ## Step 3: Ship (Filtered)
@@ -113,19 +117,13 @@ If `Survived: no`, log to `filtered-findings.md`. Proceed to merge regardless �
 
 Same as `/insight-devloop`. Conflicts still stop the loop and go to the user.
 
-### 3b: Normalize — The Editor
-
-**Architectural only.** Skip for small and medium. Read the Editor's SKILL.md at `.claude/skills/insight-editor/SKILL.md` and construct the brief per devloop Step 3b.
-
-**IMPORTANT: Write `normalization.md` immediately** after the Editor returns. Agent output alone is not persistent.
-
-### 3c: Verify (parallel, confidence-filtered)
+### 3b: Verify (parallel, confidence-filtered)
 
 Two agents run in parallel:
 
-**The Storm (Opus)**: Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md` and construct the brief per devloop Step 3c. Add one instruction: "For each finding, assign a confidence score (0-100) based on how certain you are this is a real issue, not a theoretical concern. Add a Confidence column to the table."
+**The Storm (Opus)**: Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md` and construct the brief per devloop Step 3b. Add one instruction: "For each finding, assign a confidence score (0-100) based on how certain you are this is a real issue, not a theoretical concern. Add a Confidence column to all tables." The Storm handles both adversarial review and consistency in a single pass.
 
-**The Cartographer (Sonnet)**: Invoke `/insight-edge-case-hunter` as the actual skill (use the Skill tool, not a general-purpose agent). Add one instruction: "For each finding, add a Confidence column (0-100) based on how certain you are this path is actually reachable and unguarded."
+**The Cartographer (Sonnet)**: Invoke `/insight-edge-case-hunter` as the actual skill (use the Skill tool, not a general-purpose agent). Add one instruction: "For each finding, add a Confidence column (0-100) based on how certain you are this path is actually reachable and unguarded." Skip condition same as devloop.
 
 **Skip condition:** If the story is visual-only (layout, CSS, copy changes) with no new code paths, skip the Cartographer entirely. Mechanical path enumeration adds nothing when no branches exist to enumerate — Storm carries verification alone. Write an empty `edge-cases.md` (header only) for the archive and note "Skipped: visual-only change" at the top.
 
@@ -147,19 +145,21 @@ Cartographer output: `.insightsLoop/current/edge-cases.md` — same format with 
 - Findings with confidence 80+ → shown to user, fixed if critical/high
 - Findings with confidence <80 → appended to `.insightsLoop/current/filtered-findings.md`
 - Empty reports remain valid
-- Borderline (75-79): round up, show it. Better to over-surface than to miss.
+- Borderline (threshold-5 to threshold-1): round up, show it. Better to over-surface than to miss.
 
 ### The Monkey at Ship
 
 Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal, step-specific technique recommendations (Time Travel, Scale Shift, Hostile Input), and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-ship.md`.
 
+**IMPORTANT: Write `monkey-ship.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
+
 Her finding goes through the same 80+ confidence filter. No special treatment. She earns attention like everyone else.
 
-### 3d: Fix
+### 3c: Fix
 
-Fix only 80+ confidence findings that are critical or high severity. Append the rest to `filtered-findings.md`.
+Fix only 80+ confidence findings that are critical or high severity (including consistency assumption mismatches). Append the rest to `filtered-findings.md`.
 
-### 3e: Verify clean
+### 3d: Verify clean
 
 Run full test suite + typecheck.
 
@@ -174,14 +174,35 @@ Same as `/insight-devloop` — write `summary.md`, archive the run. One addition
 - Monkey: [X challenges across 4 steps, Y survived, Z didn't]
 ```
 
-**Archive keeps one extra file:** `filtered-findings.md` is preserved in the run directory alongside the standard archive set (summary, plan, monkey-*, storm-report).
+**Archive keeps extra files:** `filtered-findings.md` and `mockup.html` (if exists) are preserved in the run directory alongside the standard archive set (summary, plan, monkey-*, storm-report).
 
 ## Model Assignment
 
 Same as `/insight-devloop`. Monkey is Opus.
 
+## User Gates
+
+Every decision point that requires user input MUST use the `AskUserQuestion` tool. Never present a decision as plain text — the user may not realize you're waiting. Plain text looks like the agent is still working. `AskUserQuestion` makes it unmistakable.
+
+Speed mode reduces gates but doesn't eliminate them. The ones that remain are non-negotiable.
+
+**Mandatory gates (always use `AskUserQuestion`):**
+
+| When | Gate | Options |
+|------|------|---------|
+| Step 1: Frame (architectural only) | Approve triage and scope | Approve / Adjust / Abort |
+| Step 1: Monkey would change triage | Monkey says the size is wrong | Re-triage / Override / Abort |
+| Step 3a: Merge conflict | Files overlap between worktrees | Show both versions, user picks |
+| Step 3b: 80+ confidence findings | Present filtered findings before fixing | Fix listed / Skip to backlog / Discuss |
+| Step 3d: After fixes + verify clean | Confirm shippable before archive | Ship / Fix more / Abort |
+
+**Not gated in speed mode** (auto-proceed, logged):
+- Frame approval for small/medium (auto-approved, logged)
+- Monkey `Survived: no` below confidence threshold (logged to filtered-findings.md)
+
 ## Rules
 
+- **Every user gate uses `AskUserQuestion`.** This is how the user knows you need them. No exceptions. If you're waiting for input, use the tool.
 - **The Monkey never sleeps.** She launches as a real agent at every step. Speed mode changes whether she blocks, not whether she exists.
 - **Monkey findings use the same filter.** 80+ confidence or it goes to filtered-findings.md. She earns attention the same way the Storm does.
 - **One exception: triage correction.** If the Monkey's Frame finding would change the triage size, act on it even if confidence is below 80. Getting the triage wrong cascades through every step.

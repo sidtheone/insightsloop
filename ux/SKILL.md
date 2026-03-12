@@ -49,7 +49,7 @@ If the flow has more than 5 steps, it's too complex. Cut steps or combine them.
 
 ### 3. Layout
 
-ASCII wireframe. No design tools. Just boxes and labels.
+**Default:** ASCII wireframe. Boxes and labels. Fast, structural, good for planning.
 
 ```
 ┌──────────────────────────┐
@@ -70,6 +70,22 @@ ASCII wireframe. No design tools. Just boxes and labels.
 ```
 
 Mobile-width first. Desktop is just wider columns.
+
+**With `--mockup`:** After completing all 5 sections, generate a visual HTML mockup of the layout. This mockup is passed to the Shipwright as a design reference — it's not throwaway, it's the visual contract.
+
+**Skip condition:** If the story has no visual surface (pure logic, backend, data pipeline), ignore `--mockup` and produce ASCII-only output. A mockup of nothing is nothing.
+
+**Before invoking `/frontend-design`:**
+1. **Read the existing pages.** Glob for components and pages in the affected area (e.g., `src/app/**/*.tsx`, `src/components/**/*.tsx`). Read the key files — layout, theme, shared components. You need to understand the current color scheme, typography, spacing patterns, and component conventions. The mockup must feel like it belongs in the existing app, not like a standalone design.
+2. **Read `VALUES.md`** (already loaded in Phase 0). Pass the full UX values section as hard constraints.
+
+**When invoking `/frontend-design`, pass:**
+- The 5-section UX spec you just produced (Goal, Flow, Layout, Cut List, Copy)
+- The current design scheme extracted from existing pages (colors, fonts, spacing, component patterns)
+- The full UX values from `VALUES.md` as hard constraints — these override `/frontend-design`'s default aesthetic instincts
+- Explicit instruction: "Match the existing app's design language. This is a new screen in an existing product, not a standalone creation."
+
+**Output artifact:** Write the approved mockup to `.insightsLoop/current/mockup.html`. The devloop orchestrator passes this to the Shipwright alongside the Visual Spec and values.
 
 ### 4. What to Cut
 
@@ -127,11 +143,23 @@ Write a markdown file with all five sections:
 
 **Standalone (`/insight-ux`):** Point you at an existing page, a mockup, or a feature description. You produce the same five-section output. Standalone is mostly for audits — "is this screen doing too much?"
 
+## User Gates
+
+Every decision point that requires user input MUST use the `AskUserQuestion` tool. Never present a decision as plain text — the user may not realize you're waiting.
+
+**Mandatory gates (always use `AskUserQuestion`):**
+
+| When | Gate | Options |
+|------|------|---------|
+| After all 5 sections produced | User reviews the UX spec | Approve / Revise (with notes) / Rethink goal |
+| After `--mockup` HTML produced | User evaluates the visual mockup | Approve / Revise / Scrap mockup, keep spec |
+
 ## Rules
 
+- **Every user gate uses `AskUserQuestion`.** This is how the user knows you need them.
 - **Subtract, don't add.** Your first instinct should be to remove something, not add something.
 - **Show, don't argue.** Never debate UX in words. Draw the wireframe. The wireframe wins or loses on its own.
 - **One goal per invocation.** Don't design an entire app. Design one screen, one flow, one interaction.
-- **No pixel-perfect.** ASCII wireframes only. The Shipwright translates to real components. You define structure and hierarchy, not colors and fonts.
+- **No pixel-perfect in ASCII mode.** ASCII wireframes define structure and hierarchy, not colors and fonts. `--mockup` mode uses `/frontend-design` for visual fidelity.
 - **Empty states are real.** Every screen has a first-time state. Design it. "No data" is not an edge case — it's the first thing every new user sees.
 - **If you can't explain it in one sentence, simplify it.** The user goal is your test. If the goal needs a paragraph, the feature is too complex.
