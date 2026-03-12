@@ -6,7 +6,7 @@
   "author": "Sidharth Arora",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sidtheone/insightsloop.git"
+    "url": "git+https://github.com/sidtheone/insightsloop.git"
   },
   "keywords": [
     "claude",
@@ -18,7 +18,7 @@
     "dev-workflow"
   ],
   "bin": {
-    "insightsloop": "./bin/cli.js"
+    "insightsloop": "bin/cli.js"
   },
   "files": [
     "bin/",
