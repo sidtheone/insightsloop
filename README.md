@@ -188,17 +188,18 @@ Active run in `.insightsLoop/current/`. Archived to `.insightsLoop/run-NNNN-feat
 
 ## Install
 
-Copy skill directories to `.claude/skills/` in your project. All 10 directories map 1:1 to skills:
-
 ```bash
-# Clone and copy all skills
-git clone https://github.com/sidtheone/insightsloop.git
-cp -r insightsloop/{plan,devloop,devloopfast,sentinel,shipwright,storm,monkey,edge-case-hunter,ux,retro} your-project/.claude/skills/
+# Install everything (10 skills, 3 themes, config)
+npx insightsloop init
 
-# Optional: copy themes
-mkdir -p your-project/.insightsLoop/themes
-cp insightsloop/themes/*.md your-project/.insightsLoop/themes/
+# Or pick specific skills
+npx insightsloop init --skills=plan,monkey,storm
+
+# Update skills later (preserves your config)
+npx insightsloop update
 ```
+
+This copies skills to `.claude/skills/`, themes to `.insightsLoop/themes/`, and creates `.insightsLoop/config.md` with defaults (theme: pirate, 3 monkey findings, confidence threshold 80).
 
 Optionally add `VALUES.md` and `TDD-MATRIX.md` to your project root — every skill loads them before execution. Use [AssertValues](https://assertvalues.dev/) to generate sharp, constraining values through conversation.
 

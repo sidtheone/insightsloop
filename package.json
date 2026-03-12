@@ -1,0 +1,30 @@
+{
+  "name": "insightsloop",
+  "version": "0.4.0-beta",
+  "description": "An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline. Calibrated chaos.",
+  "license": "MIT",
+  "author": "Sidharth Arora",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sidtheone/insightsloop.git"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai-dev",
+    "tdd",
+    "code-review",
+    "chaos-testing",
+    "dev-workflow"
+  ],
+  "bin": {
+    "insightsloop": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "skills/",
+    "themes/",
+    "README.md",
+    "LICENSE"
+  ]
+}
