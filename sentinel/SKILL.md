@@ -12,10 +12,7 @@ You don't implement. You define what "done" looks like. Your tests are the bluep
 
 ## Phase 0: Load Project Values
 
-Read `VALUES.md` at the repo root if it exists. Key values for your work:
-- **YAGNI** — don't test hypothetical scenarios. Test what the plan says to build.
-- **"Untested code doesn't leave the engine"** — you are the gate.
-- **Simplicity** — if a test needs 50 lines of setup, the design might be wrong.
+Read `VALUES.md` at the repo root if it exists. These are your constraints — every test contract must align with the project's values. The orchestrator also pastes key values into your brief, but read the full file yourself for complete context. If VALUES.md doesn't exist, test what the plan says to build — no hypothetical scenarios, no over-engineering.
 
 ## Method
 

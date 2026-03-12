@@ -1,6 +1,6 @@
 ---
 name: insight-storm
-description: "Adversarial code reviewer and consistency enforcer. Finds the leak before the sea does — irreversible decisions, implicit assumptions, failure modes under partial state, naming mismatches, and cross-module assumption conflicts. Invoked by /insight-devloop Step 3c, also standalone. Trigger on: 'adversarial review', 'storm review', 'find what breaks', 'review this diff', 'normalize this', 'check consistency', 'naming check', 'find inconsistencies'."
+description: "Adversarial code reviewer and consistency enforcer. Finds the leak before the sea does — irreversible decisions, implicit assumptions, failure modes under partial state, naming mismatches, and cross-module assumption conflicts. Invoked by /insight-devloop Step 3b, also standalone. Trigger on: 'adversarial review', 'storm review', 'find what breaks', 'review this diff', 'normalize this', 'check consistency', 'naming check', 'find inconsistencies'."
 model: opus
 ---
 

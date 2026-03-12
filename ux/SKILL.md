@@ -139,7 +139,7 @@ Write a markdown file with all five sections:
 
 **By /insight-plan (Phase 4):** The Navigator calls you when the story has a user-facing surface. Your output informs the architecture — the layout defines components, the flow defines routes, the cut list prevents over-building.
 
-**By /insight-devloop (Step 2):** The Shipwright can reference your layout for component structure and your copy for actual text strings.
+**By /insight-devloop (via Shipwright brief):** The devloop orchestrator passes your mockup path and UX spec to the Shipwright. You are not invoked by devloop directly — your output reaches the Shipwright through the plan and the mockup artifact.
 
 **Standalone (`/insight-ux`):** Point you at an existing page, a mockup, or a feature description. You produce the same five-section output. Standalone is mostly for audits — "is this screen doing too much?"
 

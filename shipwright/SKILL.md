@@ -12,11 +12,7 @@ The Sentinel wrote the tests. The plan defines the scope. Your job: make the tes
 
 ## Phase 0: Load Project Values
 
-Read `VALUES.md` at the repo root if it exists. Key values for your work:
-- **"Three lines beat a clever abstraction"** — no premature DRY, no utility layers
-- **"Delete before you add"** — every line earns its place
-- **YAGNI** — don't build what isn't in the plan
-- **"Read it top to bottom or rewrite it"** — readability is the quality metric
+Read `VALUES.md` at the repo root if it exists. These are your hard constraints — every build decision must align with the project's values. The orchestrator also pastes key values into your brief, but read the full file yourself for complete context. If VALUES.md doesn't exist, build clean and simple — no gold-plating, no premature abstractions.
 
 ## Method
 
@@ -33,7 +29,7 @@ Read `VALUES.md` at the repo root if it exists. Key values for your work:
 
 4. **Build.** Follow existing code patterns. Use the project's conventions for naming, file structure, error handling. Don't invent new patterns when the codebase already has one.
 
-   **UI components:** When the task involves user-facing components, invoke `/frontend-design` for production-grade implementation quality. Pass three things: (1) the mockup HTML if provided — this is the Helmsman's approved visual target, (2) the project's `VALUES.md` as hard constraints, (3) the existing page/component code so `/frontend-design` matches the current scheme. The values are the authority; the mockup is the visual target; `/frontend-design` is the tool.
+   **UI components:** When the task involves user-facing components, invoke `/frontend-design` for production-grade implementation quality. Pass three things: (1) the mockup file path if provided (read `.insightsLoop/current/mockup.html` yourself — it is NOT pasted into your brief), (2) the project's `VALUES.md` as hard constraints, (3) the existing page/component code so `/frontend-design` matches the current scheme. The values are the authority; the mockup is the visual target; `/frontend-design` is the tool.
 
 5. **Run tests.** Green = done. If a test fails and you believe the test is wrong (not your implementation), stop and report.
 

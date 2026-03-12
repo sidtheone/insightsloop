@@ -3,7 +3,7 @@ name: insight-devloop
 description: "4-step build loop for human+AI teams. Consumes plan.md (with Challenge section) from /insight-plan, then executes: Frame (triage) → Build (TDD + parallel worktrees) → Ship (merge + normalize + verify). Use after /plan produces artifacts, or for any scoped task ready to build. Trigger on: 'build this', 'execute the plan', 'run devloop', 'start building', or when plan.md exists and user wants to proceed."
 model: opus
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npx jest*), Bash(npx tsc*), Bash(git *), Agent, Skill(insight-edge-case-hunter), AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npx jest*), Bash(npx tsc*), Bash(git *), Agent, Skill(insight-edge-case-hunter), Skill(frontend-design), AskUserQuestion
 argument-hint: "[path-to-plan.md]"
 ---
 
@@ -37,9 +37,9 @@ How to brief agents with values:
 - `.claude/skills/insight-shipwright/SKILL.md` — read before Step 2b
 - `.claude/skills/insight-storm/SKILL.md` — read before Step 3b
 
-When briefing agents, paste the relevant SKILL.md content (Identity, Method, Rules) into their brief — do not paraphrase. The SKILL.md is the single source of truth for how each crew member operates.
+When briefing agents, paste the relevant SKILL.md content into their brief — do not paraphrase. Paste: the persona description at the top of the file (unlabeled prose before the first `##`), the `## Method` section, and the `## Rules` section. The SKILL.md is the single source of truth for how each crew member operates.
 
-Also read `.insightsLoop/config.md` for engine tunables. Key settings:
+Also read `.insightsLoop/config.md` for engine tunables if it exists. If it doesn't exist, use these defaults:
 - `monkey_findings_per_step` (default: 1) — how many findings the Monkey produces at each step. If > 1, tell the Monkey: "Produce N findings, each using a different technique. Each finding gets its own Technique/Target/Confidence/Survived block in the output file."
 - `confidence_threshold` — used by devloopfast only (default: 80)
 
@@ -59,8 +59,7 @@ All build artifacts go in `.insightsLoop/current/` during the active run. Create
 │   ├── monkey-build.md
 │   ├── monkey-ship.md
 │   ├── storm-report.md
-│   ├── edge-cases.md
-│   └── normalization.md
+│   └── edge-cases.md
 ├── run-0001-embed-widget/    ← completed run (archived)
 │   ├── summary.md
 │   ├── plan.md
@@ -123,9 +122,13 @@ Use the `AskUserQuestion` tool to present the frame and get approval. Options: "
 
 ### The Monkey at Frame
 
-Launch the Monkey agent (Opus). Construct her brief using the template in `${CLAUDE_SKILL_DIR}/reference/monkey-brief-template.md` with step=frame. Context: plan.md + frame.md.
+Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=frame. Context: plan.md + frame.md.
 
-Output: `.insightsLoop/current/monkey-frame.md` — write immediately after agent returns.
+**Dedup with Plan Monkey:** If `.insightsLoop/current/monkey-plan.md` exists (written by the Navigator during `/insight-plan`), read it and include its finding in the "Previous Monkey findings this run" field. The Frame Monkey should not repeat what the Plan Monkey already challenged.
+
+Output: `.insightsLoop/current/monkey-frame.md`
+
+**IMPORTANT: Write `monkey-frame.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
 
 Present the Monkey's finding to the user alongside the frame. If `Survived: no`, discuss before proceeding.
 
@@ -150,9 +153,11 @@ She produces: failing test suite, written to the project's test directory.
 
 ### The Monkey at TDD
 
-Launch the Monkey agent (Opus). Construct her brief using the template in `${CLAUDE_SKILL_DIR}/reference/monkey-brief-template.md` with step=tdd. Context: Sentinel's test suite + plan.md.
+Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=tdd. Context: Sentinel's test suite + plan.md.
 
-Output: `.insightsLoop/current/monkey-tdd.md` — write immediately after agent returns.
+Output: `.insightsLoop/current/monkey-tdd.md`
+
+**IMPORTANT: Write `monkey-tdd.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
 
 If `Survived: no` and the finding is specific enough to act on, add the test. If `Survived: yes`, move on. Present the finding to the user either way.
 
@@ -175,9 +180,11 @@ Independent tasks run in parallel. Dependent tasks run sequentially.
 
 ### The Monkey at Build
 
-Launch the Monkey agent (Opus). Construct her brief using the template in `${CLAUDE_SKILL_DIR}/reference/monkey-brief-template.md` with step=build. Context: summary of what each worktree built + file lists. Use the single-worktree variant from the template if frame.md shows one Shipwright.
+Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=build. Context: summary of what each worktree built + file lists. Use the single-worktree variant from the template if frame.md shows one Shipwright.
 
-Output: `.insightsLoop/current/monkey-build.md` — write immediately after agent returns.
+Output: `.insightsLoop/current/monkey-build.md`
+
+**IMPORTANT: Write `monkey-build.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
 If `Survived: no`, investigate the seam before merging. If `Survived: yes`, proceed to merge.
 
@@ -229,9 +236,11 @@ Output: `.insightsLoop/current/edge-cases.md` — empty report (header only, no 
 
 **Do not skip.** Ship Monkey runs AFTER fixes are applied and tests pass, before writing summary.md. If Storm/Cartographer/fixes consumed your attention, the Ship Monkey is still required. It is the last chaos check before archive.
 
-Launch the Monkey agent (Opus). Construct her brief using the template in `${CLAUDE_SKILL_DIR}/reference/monkey-brief-template.md` with step=ship. Context: merged diff + storm-report.md + edge-cases.md.
+Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=ship. Context: merged diff + storm-report.md + edge-cases.md.
 
-Output: `.insightsLoop/current/monkey-ship.md` — write immediately after agent returns.
+Output: `.insightsLoop/current/monkey-ship.md`
+
+**IMPORTANT: Write `monkey-ship.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
 If `Survived: no` and confidence is high, treat it like a Storm finding and fix it. Present all Monkey findings to the user regardless.
 
@@ -288,7 +297,7 @@ Write `.insightsLoop/current/summary.md`:
 Then archive the run:
 1. Determine next run number (look at existing `run-*` dirs)
 2. Keep: `summary.md`, `plan.md`, `monkey-*.md`, `storm-report.md`, `mockup.html` (if exists)
-3. Delete: `frame.md`, `normalization.md`, `edge-cases.md`
+3. Delete: `frame.md`, `edge-cases.md`
 4. Rename `.insightsLoop/current/` → `.insightsLoop/run-NNNN-feature-name/`
 
 Present summary to user. Suggest next: run `/insight-retro` to capture learnings.

@@ -62,7 +62,7 @@ Launch each persona as a parallel agent. Each receives the run's summary.md, the
 - Artifacts: edge-cases.md (if it exists, even if skipped), summary.md
 - Prompt: "You are The Cartographer. Review this run's summary and your edge case report. In 3-5 sentences: Were there unguarded paths you missed? Did the skip condition fire correctly? What paths would you enumerate differently?"
 
-Write all crew responses to `.insightsLoop/current/crew-retro.md` (or the run directory if already archived):
+Collect all crew responses in memory (do NOT write to disk yet — Step 3 gates all writes behind user approval). Format them as:
 
 ```markdown
 # Crew Round
@@ -107,7 +107,9 @@ Read the crew round responses. Combined with your own analysis from Step 1, answ
 - Test patterns that should be standard?
 - Crew briefing improvements? (If the Shipwright said the plan was unclear, that's a Navigator problem)
 
-Use the `AskUserQuestion` tool to present the crew round + your synthesis and gather user input before writing anything.
+Use the `AskUserQuestion` tool to present the crew round + your synthesis and gather user input before writing anything. This is the single write gate — nothing hits disk until the user approves. Options: "Approve — write updates" / "Revise — change something" / "Skip — nothing to update"
+
+After approval, write `crew-retro.md` to the run directory (use the archived `run-NNNN-*` path if the run was already archived, or `.insightsLoop/current/` if not).
 
 ### 3b. Evaluate the Filter (devloopfast only)
 

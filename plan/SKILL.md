@@ -184,6 +184,8 @@ For architectural changes, run these sequentially (values → adversarial → re
 
 **Goal**: Produce the single artifact that `/insight-devloop` consumes.
 
+**Before writing:** Check if `.insightsLoop/current/` already has files from a previous run. If it does, warn the user — a previous run wasn't archived. Use `AskUserQuestion` to ask: "Archive previous run first, or overwrite?" Do not silently overwrite.
+
 Write to `.insightsLoop/current/plan.md`:
 
 ```markdown

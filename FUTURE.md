@@ -45,7 +45,7 @@ Findings from the crew's adversarial review that were cut for a weekend project 
 - Formal retrospective artifact format
 - Integration test harness for agent contracts
 
-## Editor (4 deferred)
+## Storm — Consistency (4 deferred, formerly Editor)
 - "Loop" vs "Cycle" consistency
 - "Agent" vs "Assistant" consistency
 - "Human-in-the-loop" vs "Human-on-the-loop" consistency

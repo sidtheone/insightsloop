@@ -3,7 +3,7 @@ name: insight-devloopfast
 description: "Speed mode build loop. Same crew, same Monkey, less ceremony. Auto-triages (no approval gate for small/medium), confidence-filters findings (80+ only). The Monkey never sleeps — she just doesn't block. Use when you trust the plan and want to ship fast. Trigger on: 'fast build', 'quick build', 'devloopfast', 'speed mode', 'just build it'."
 model: opus
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npx jest*), Bash(npx tsc*), Bash(git *), Agent, Skill(insight-edge-case-hunter), AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npx jest*), Bash(npx tsc*), Bash(git *), Agent, Skill(insight-edge-case-hunter), Skill(frontend-design), AskUserQuestion
 ---
 
 # DevLoopFast — Speed Mode
@@ -42,7 +42,7 @@ Same as `/insight-devloop` Step 0. Read `VALUES.md` and `TDD-MATRIX.md`. Paste c
 
 Read each crew SKILL.md right before briefing that crew member (same progressive loading as devloop). Same crew, same identities, same methods. Speed mode changes ceremony, not crew definitions.
 
-Also read `.insightsLoop/config.md` for engine tunables:
+Also read `.insightsLoop/config.md` for engine tunables if it exists. If it doesn't exist, use these defaults:
 - `monkey_findings_per_step` (default: 1) — if > 1, tell the Monkey to produce N findings per step, each using a different technique
 - `confidence_threshold` (default: 80) — filtering cutoff for Storm, Cartographer, and Monkey findings
 
