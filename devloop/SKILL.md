@@ -42,8 +42,23 @@ When briefing agents, paste the relevant SKILL.md content into their brief — d
 Also read `.insightsLoop/config.md` for engine tunables if it exists. If it doesn't exist, use these defaults:
 - `monkey_findings_per_step` (default: 1) — how many findings the Monkey produces at each step. If > 1, tell the Monkey: "Produce N findings, each using a different technique. Each finding gets its own Technique/Target/Confidence/Survived block in the output file."
 - `confidence_threshold` — used by devloopfast only (default: 80)
+- `theme` (default: none) — immersive crew theme. See below.
 
 **When constructing Monkey briefs:** If `monkey_findings_per_step` > 1, replace "Pick one technique and apply it with specificity" in each Monkey brief with: "Produce {N} findings, each using a different technique. Each finding gets its own Technique/Target/Confidence/Survived block in the output file." The templates below assume the default (1). Modify them based on config.
+
+### Theme Loading
+
+If `config.md` has `setting:` under `## Theme` and it's not `none`, load `.insightsLoop/themes/{setting}.md`. This file defines:
+
+1. **Persona Openers** — prepend the themed opener to each persona's brief, before their SKILL.md content. The opener sets the scene; the SKILL.md personality takes over after.
+2. **Step Names** — use themed step names in status messages and artifact headers (e.g., "Frame" → "Chart Course" for pirate theme).
+3. **Orchestrator Voice** — use themed status messages between steps instead of plain status updates. Print these as regular text output so the user sees them.
+4. **Artifact Headers** — use themed headers when writing artifact files (e.g., "# Storm Report" → "# Hull Inspection Log").
+5. **Vocabulary** — substitute themed terms in orchestrator messages and artifact prose. Never substitute in: file paths, technique names, severity levels, confidence scores, or rule text.
+
+If the theme file doesn't exist, fall back to `none` (no theme) and warn the user.
+
+**Theme does NOT change:** file paths, Monkey technique names, severity levels (critical/high/medium/low), confidence scores, SKILL.md rules or methods, user gate behavior, or any functional logic. Theme is voice and setting only.
 
 ## Artifact Directory
 

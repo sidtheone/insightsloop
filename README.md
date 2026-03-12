@@ -1,6 +1,6 @@
-# InsightsLoop (beta 0.2)
+# InsightsLoop (beta 0.3)
 
-An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline.
+An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline. Now with immersive themes.
 
 ```
 /insight-plan → /insight-devloop (or /insight-devloopfast) → /insight-retro
@@ -34,14 +34,14 @@ Every step has a persona. These aren't decoration — they define how each agent
 
 | Persona | Role | Skill | Model |
 |---------|------|-------|-------|
-| **The Navigator** | Charts every rock before setting sail | `/insight-plan` | Opus |
-| **The Sentinel** | Writes contracts like lives depend on them | `/insight-sentinel` | Opus |
-| **The Shipwright** | Builds fast, builds clean, no wasted wood | `/insight-shipwright` | Sonnet |
-| **The Storm** | Finds the leak before the sea does + consistency enforcement | `/insight-storm` | Opus |
-| **The Cartographer** | Maps every path, marks every cliff | `/insight-edge-case-hunter` | Sonnet |
-| **The Monkey** | Cheerful, targeted chaos — if she doesn't break it, production will | `/insight-monkey` + every step | Opus |
-| **The Helmsman** | Steers what the user sees — radical minimalist | `/insight-ux` | Opus |
-| **The Lookout** | Remembers every voyage, spots the pattern | `/insight-retro` | Sonnet |
+| **The Navigator** | Veteran planner — leads with constraints, asks the uncomfortable question | `/insight-plan` | Opus |
+| **The Sentinel** | Law writer — one clause, one assertion, one unambiguous verdict | `/insight-sentinel` | Opus |
+| **The Shipwright** | Stonemason — quiet pride, won't touch what isn't his | `/insight-shipwright` | Sonnet |
+| **The Storm** | Hull inspector — presses seams, traces consequences one layer further | `/insight-storm` | Opus |
+| **The Cartographer** | Maps every path, marks every cliff — no personality, no opinions | `/insight-edge-case-hunter` | Sonnet |
+| **The Monkey** | Enthusiastic bunny — pokes assumptions until something wobbles | `/insight-monkey` + every step | Opus |
+| **The Helmsman** | Visceral minimalist — "what happens if we remove this?" | `/insight-ux` | Opus |
+| **The Lookout** | Sharp record-keeper — "Burned us:" entries, mistakes first | `/insight-retro` | Sonnet |
 
 ## The Loop
 
@@ -100,7 +100,7 @@ Precedence: VALUES.md > Visual Spec > mockup > existing codebase patterns
 
 ## The Monkey
 
-The Monkey is what makes InsightsLoop different. She's not a checklist. She's not a second reviewer. She's a real Opus agent with eight chaos techniques:
+The Monkey is what makes InsightsLoop different. *poke poke poke.* She's not a checklist. She's not a second reviewer. She's an enthusiastic bunny in a server room — endlessly curious, relentlessly cheerful, pressing every button she can find. A real Opus agent with eight chaos techniques:
 
 1. **Assumption Flip** — reverse the strongest assumption, see if it holds
 2. **Hostile Input** — creative inputs nobody considered (not just null)
@@ -111,7 +111,7 @@ The Monkey is what makes InsightsLoop different. She's not a checklist. She's no
 7. **Requirement Inversion** — what if the user wants the opposite?
 8. **Delete Probe** — what happens if you delete this entirely?
 
-She picks the technique that would hurt most at each step. Her output includes a `Survived` field — because resilience confirmed is as valuable as weakness found. She's unpredictable by design. She never asks the same question twice.
+She picks the technique that would hurt most at each step. 3 findings per step by default (configurable). Her output includes a `Survived` field — because resilience confirmed is as valuable as weakness found. She's unpredictable by design. She never pokes the same spot twice.
 
 ## User Gates
 
@@ -194,9 +194,52 @@ Copy skill directories to `.claude/skills/` in your project. All 10 directories 
 # Clone and copy all skills
 git clone https://github.com/sidtheone/insightsloop.git
 cp -r insightsloop/{plan,devloop,devloopfast,sentinel,shipwright,storm,monkey,edge-case-hunter,ux,retro} your-project/.claude/skills/
+
+# Optional: copy themes
+mkdir -p your-project/.insightsLoop/themes
+cp insightsloop/themes/*.md your-project/.insightsLoop/themes/
 ```
 
 Optionally add `VALUES.md` and `TDD-MATRIX.md` to your project root — every skill loads them before execution. Use [AssertValues](https://assertvalues.dev/) to generate sharp, constraining values through conversation.
+
+## Themes (new in beta 0.3)
+
+The entire devloop experience can be themed. Set it in `.insightsLoop/config.md`:
+
+```markdown
+## Theme
+- setting: pirate
+```
+
+Available themes: `pirate` | `space` | `naval` | `none`
+
+Themes change: persona openers, step names, orchestrator status messages, artifact headers, vocabulary. Themes never change: file paths, technique names, severity levels, confidence scores, rules, or functional logic.
+
+| Theme | Ship | Vibe |
+|-------|------|------|
+| `pirate` | *The Insight* | Salt, timber, articles of agreement |
+| `space` | *ISV Insight* | Vacuum, conduits, mission protocols |
+| `naval` | *HMS Insight* | Discipline, welds, rules of engagement |
+| `none` | — | Default, no roleplay |
+
+Step names include the actual phase in brackets so you always know where you are: "Chart Course (Frame)", "Articles of Agreement (TDD)", etc.
+
+Theme files live in `.insightsLoop/themes/` (or `themes/` in this repo). Copy them alongside the skill directories.
+
+## Configuration (new in beta 0.3)
+
+All tunables live in `.insightsLoop/config.md`:
+
+```markdown
+## Theme
+- setting: none
+
+## Monkey
+- findings_per_step: 3
+
+## Confidence (devloopfast only)
+- threshold: 80
+```
 
 ## Known Limitations
 

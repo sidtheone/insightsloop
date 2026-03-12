@@ -45,8 +45,11 @@ Read each crew SKILL.md right before briefing that crew member (same progressive
 Also read `.insightsLoop/config.md` for engine tunables if it exists. If it doesn't exist, use these defaults:
 - `monkey_findings_per_step` (default: 1) — if > 1, tell the Monkey to produce N findings per step, each using a different technique
 - `confidence_threshold` (default: 80) — filtering cutoff for Storm, Cartographer, and Monkey findings
+- `theme` (default: none) — immersive crew theme
 
 **Monkey brief template:** Use the same template as devloop at `.claude/skills/insight-devloop/reference/monkey-brief-template.md`. If `monkey_findings_per_step` > 1, replace "Pick one technique" with "Produce {N} findings, each using a different technique."
+
+**Theme loading:** Same as devloop — if `config.md` has a theme set (not `none`), load `.insightsLoop/themes/{setting}.md` and apply persona openers, step names, orchestrator voice, artifact headers, and vocabulary substitutions. See devloop SKILL.md "Theme Loading" section for full rules. Theme is voice only — never changes file paths, technique names, severity levels, or functional logic.
 
 ## Artifact Directory
 
