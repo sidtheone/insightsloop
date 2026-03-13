@@ -146,29 +146,29 @@ This skill expects `plan.md` with a `## Challenge` section. Search order: `$ARGU
 
 Before triaging, check if the project needs scaffolding:
 
-**Pass 1 — File existence:**
-1. Check if `package.json` (or equivalent: `requirements.txt`, `go.mod`, `Cargo.toml`) exists in project root
-2. Check if framework entry file exists (e.g., `app/layout.tsx` for Next.js, `src/main.tsx` for Vite)
-3. Check if framework config exists (e.g., `next.config.*`, `vite.config.*`, `tailwind.config.*`)
+**Pass 1 — File existence (stack-agnostic):**
+1. Check for a dependency manifest (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, `pom.xml`, etc.)
+2. Check for a framework entry point (the file where the app starts — `app/layout.tsx`, `src/main.tsx`, `main.py`, `main.go`, `src/main.rs`, `index.html`, etc.)
+3. Check for framework config (`next.config.*`, `vite.config.*`, `django/settings.py`, `Makefile`, `docker-compose.yml`, etc.)
 4. If any core file is missing → greenfield
 
 **Pass 2 — Wiring verification (runs even if Pass 1 finds all files):**
-5. Check that entry file has non-empty content (not just a bare `export default` or empty component)
-6. Check that layout file imports and wraps children (for Next.js: `{children}` in JSX)
-7. Check that CSS entry file contains framework directives (e.g., `@tailwind base` or `@import "tailwindcss"`)
-8. Check that `package.json` has framework as a dependency (e.g., `next`, `react`, `vite`)
+5. Check that entry point has real content (not just a bare scaffold or empty export)
+6. Check that dependencies are declared in the manifest (framework listed as a dependency)
+7. Check that config connects to entry point (build tool knows where source lives)
+8. For web projects: check that CSS/style entry exists with framework directives if applicable
 9. If any wiring check fails → partially-scaffolded (treat as greenfield with pre-existing files noted)
 
 **If greenfield or partially-scaffolded:**
 
 Use `AskUserQuestion`: "Detected [greenfield / partially-scaffolded] project. Files already present: [list]. Missing or unwired: [list]. Generate scaffolding checklist? [Approve / Skip / Edit]"
 
-If approved, generate checklist from plan's Architecture section:
-- **Next.js + Tailwind:** app/layout.tsx (must wrap `{children}`, import globals.css), app/page.tsx (must export default component), app/globals.css (must contain Tailwind directives), tailwind.config.ts, postcss.config.js, next.config.ts
-- **Vite + React + Tailwind:** index.html (must reference src/main.tsx), src/main.tsx (must render App into root), src/App.tsx, src/index.css (must contain Tailwind directives), vite.config.ts, tailwind.config.ts, postcss.config.js
-- **Other stacks:** Derive from architecture section. Present to user for confirmation.
+If approved, generate checklist from plan's Architecture section. The checklist is stack-specific — derive from the chosen architecture:
+- Read the plan's Architecture section for stack choice
+- For each file needed to boot the stack, list: filename, minimum viable content (what it must contain to wire correctly), and whether it exists already
 - For partially-scaffolded: mark existing files as "exists — verify wiring" vs missing as "create"
-- Include design tokens from Visual Spec if present
+- Include design tokens from Visual Spec if present (CSS custom properties, font imports, color palette)
+- Present checklist to user for confirmation — the LLM derives the checklist, the user validates it
 
 Write checklist to `.insightsLoop/current/scaffolding-checklist.md`. This file is passed to Sentinel via brief and archived with the run (keep-list).
 

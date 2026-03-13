@@ -80,8 +80,8 @@ Same as `/insight-devloop` — `plan.md` with `## Challenge` section must exist.
 ### Greenfield Detection
 
 Same two-pass detection as `/insight-devloop`:
-- **Pass 1:** File existence (package.json, entry file, framework config)
-- **Pass 2:** Wiring verification (non-empty content, layout wraps children, CSS has directives, framework in deps)
+- **Pass 1:** File existence — stack-agnostic (dependency manifest, framework entry point, framework config)
+- **Pass 2:** Wiring verification (real content in entry point, dependencies declared, config connects to source)
 
 If greenfield/partially-scaffolded: use `AskUserQuestion` even in speed mode — scaffolding correctness is not auto-approvable. Generate checklist, write to `.insightsLoop/current/scaffolding-checklist.md`. Sentinel receives it in her brief.
 

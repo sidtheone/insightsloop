@@ -357,6 +357,6 @@ The orchestrator filters the consolidated table for Fix Spec Mode by selecting r
 
 7. **Fix pipeline is three sequential agents.** Storm Fix Spec → Sentinel regression tests → Shipwright patches. This is slower than the original single-agent Fix Mode. Acceptable tradeoff for correctness — correlated failure is worse than latency. The three agents can't parallelize because each depends on the previous output.
 
-8. **Wiring verification heuristics are framework-specific.** The Pass 2 checks (e.g., "layout imports children", "CSS has Tailwind directives") assume known framework patterns. For unfamiliar frameworks, Pass 2 may false-negative. The user gate catches this, but the checklist presented may be incomplete.
+8. ~~**Wiring verification heuristics are framework-specific.**~~ **Resolved:** Detection is now stack-agnostic — checks for dependency manifests, entry points, and configs generically. Checklist is derived from plan's Architecture section, not hardcoded per framework.
 
 9. **Conceptual findings never get auto-fixed.** Findings prefixed `[concept]` go to Backlog. If most Monkey findings are conceptual, the fix pipeline handles very few items. This is correct behavior (conceptual findings need human judgment) but worth noting — the auto-fix pipeline may appear underutilized.

@@ -91,14 +91,21 @@ Use the `AskUserQuestion` tool to confirm which stories are v1 and which story t
 
 ### Greenfield Check
 
-Before exploring, check if the project needs scaffolding:
-1. Check if `package.json` (or equivalent) exists in project root
-2. Check if framework entry file exists (e.g., `app/layout.tsx`, `src/main.tsx`)
-3. Check if framework config exists (e.g., `next.config.*`, `vite.config.*`)
-4. If files exist, check wiring: non-empty content, layout wraps children, CSS has directives, framework in deps
-5. If any check fails → note as greenfield or partially-scaffolded
+Before exploring, check if the project needs scaffolding. This is stack-agnostic — look for whatever the project's ecosystem uses:
 
-If greenfield: note it for Phase 4 (Architecture must include stack choice and scaffolding) and Phase 5 (Triage must account for scaffolding work). The devloop Frame step will generate the detailed scaffolding checklist — the planner just needs to know it's greenfield so sizing is correct.
+**Pass 1 — Does the project exist?**
+1. Check for a dependency manifest: `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, `pom.xml`, `build.gradle`, etc.
+2. Check for a framework entry point: the file where the app starts (`app/layout.tsx`, `src/main.tsx`, `main.py`, `main.go`, `src/main.rs`, `index.html`, etc.)
+3. Check for framework config: `next.config.*`, `vite.config.*`, `django/settings.py`, `.flaskenv`, `Makefile`, `docker-compose.yml`, etc.
+4. If any core file is missing → greenfield
+
+**Pass 2 — Does it actually wire together?**
+5. Check that the entry point has real content (not just a bare scaffold or empty export)
+6. Check that dependencies are actually installed or declared (manifest lists the framework)
+7. Check that config connects to entry point (e.g., build tool knows where source lives)
+8. If any wiring check fails → partially-scaffolded
+
+If greenfield/partially-scaffolded: note it for Phase 4 (Architecture must include stack choice and scaffolding) and Phase 5 (Triage must account for scaffolding work). The devloop Frame step will generate the detailed scaffolding checklist — the planner just needs to know it's greenfield so sizing is correct.
 
 ### Exploration
 
