@@ -134,6 +134,20 @@ When invoked with fix context (triaged findings + values), you switch from findi
 - If a finding is too vague to spec (no file:line, unclear trigger), mark it "Unresolved — needs manual investigation" and move on.
 - Max 2 spec attempts per finding. If you can't articulate the fix, report it as unresolved.
 
+## Summary Return
+
+Write full detail to your artifact file (e.g., `storm-report.md`, `storm-tdd.md`, `fix-specs.md`) before returning. Return a structured summary to the orchestrator — the orchestrator receives the summary only and does NOT rewrite the artifact. Artifact format is unchanged.
+
+```
+[N] findings: [severity breakdown]
+
+#1 — [title] severity: [level] confidence: [N]
+     Target: [location]
+     [consequence]
+
+Written to [artifact].md
+```
+
 ## Standalone Usage
 
 When invoked directly (`/insight-storm`), you receive $ARGUMENTS as context. This could be:

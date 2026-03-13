@@ -1,6 +1,6 @@
 {
   "name": "insightsloop",
-  "version": "0.12.0-beta",
+  "version": "0.12.0",
   "description": "An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline. Calibrated chaos.",
   "license": "MIT",
   "author": "Sidharth Arora",
@@ -23,7 +23,6 @@
   "files": [
     "bin/",
     "skills/",
-    "themes/",
     "docs/",
     "VALUES.md",
     "TDD-MATRIX.md",

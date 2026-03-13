@@ -87,3 +87,16 @@ Accepts one of:
 - $ARGUMENTS if invoked directly
 
 If no scope is specified, default to `git diff` (unstaged changes).
+
+## Summary Return
+
+Write full detail to your artifact file (`edge-cases.md`) before returning. Return a structured summary to the orchestrator — the orchestrator receives the summary only and does NOT rewrite the artifact. Artifact format is unchanged.
+
+```
+[N] unguarded paths found
+
+#1 — [location] — [trigger] → [consequence] confidence: [N]
+#2 — ...
+
+Written to edge-cases.md
+```

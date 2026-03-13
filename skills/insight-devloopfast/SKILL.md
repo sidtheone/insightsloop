@@ -47,27 +47,21 @@ Same as `/insight-devloop` Step 0. Read `VALUES.md` and `TDD-MATRIX.md`. Paste c
 
 Read each crew SKILL.md right before briefing that crew member (same progressive loading as devloop). Same crew, same identities, same methods. Speed mode changes ceremony, not crew definitions.
 
-### Brief Construction Rules
+### Briefing
 
-Same three rules as `/insight-devloop`:
-1. **Paste SKILL.md verbatim.** Entire file content — not selected sections, not paraphrased.
-2. **Write context to a brief file.** `.insightsLoop/current/brief-<crew>.md` (or `brief-<crew>-<mode>.md` for multi-mode crew). One read instruction in the Agent prompt.
-3. **Present crew output as-is.** No rewriting, narrating, or summarizing.
+Same as devloop: Fill template from `brief-templates/`. Write brief to `.insightsLoop/current/brief-<crew>.md`. Pass to agent. Present crew output as-is. All `brief-*.md` files are on the archive discard list.
 
-Brief naming and discard rules are identical to devloop. All `brief-*.md` files are on the archive discard list.
+Also read `.insightsLoop/config.md` for engine tunables if it exists. Defaults:
+- `monkey_findings_per_step` (default: 3) — per vertical
+- `confidence_threshold` (default: 80) — filtering cutoff
 
-Also read `.insightsLoop/config.md` for engine tunables if it exists. If it doesn't exist, use these defaults:
-- `monkey_findings_per_step` (default: 3) — applies **per vertical**. With 5 verticals, the Monkey produces 15 findings (3 × 5)
-- `confidence_threshold` (default: 80) — filtering cutoff for Storm, Cartographer, and Monkey findings
-- `theme` (default: none) — immersive crew theme
+## Step 0.5: Resume Check
 
-**Monkey brief template:** Use the same template as devloop at `.claude/skills/insight-devloop/reference/monkey-brief-template.md`. `monkey_findings_per_step` applies per vertical (default: 3). Tell the Monkey: "Produce {N} findings per vertical, each using a different technique."
+Same as devloop: If `.insightsLoop/current/` has artifacts, ask: **Resume** (skip steps whose output exists) / **Start fresh** (archive, begin new) / **Abort**. Gates always re-run on resume.
 
-**Theme loading:** Same as devloop — if `config.md` has a theme set (not `none`), load `.insightsLoop/themes/{setting}.md`. See devloop SKILL.md "Theme Loading" section for the full rules and the themed/never-themed boundary. Key points:
-- Orchestrator voice is MANDATORY — ALL text output between steps uses themed voice, never plain narration ("Let me read the SKILL.md..." is wrong — print the themed moment instead)
-- Artifact headers get themed, artifact content stays plain
-- Crew output is never themed — findings tables, severity, confidence are always parseable
-- The ship speaks themed, the crew speaks plain
+### Lean Crew (Small triage)
+
+Same as devloop — Small triage skips Cartographer and Build Monkey. Gate: `Triage: Small. Lean crew. Approve / Full crew / Adjust / Abort`. In speed mode, lean crew is auto-approved for small/medium — only architectural gates on human.
 
 ## Artifact Directory
 
@@ -85,7 +79,7 @@ Same as `/insight-devloop` — `plan.md` with `## Challenge` section must exist.
 
 ### 1a: The Quartermaster (Opus)
 
-Same as `/insight-devloop` Step 1a. Read Quartermaster SKILL.md, paste verbatim, write brief to `.insightsLoop/current/brief-quartermaster.md`. The Quartermaster handles:
+Same as `/insight-devloop` Step 1a. Read Quartermaster SKILL.md, fill template (`brief-templates/quartermaster.md`), write to `.insightsLoop/current/brief-quartermaster.md`. The Quartermaster handles:
 - Codebase survey, greenfield detection, scaffolding checklist
 - Task decomposition into atomic worktree-level tasks
 - Worktree assignments with parallelization plan
@@ -111,7 +105,7 @@ For architectural: use the `AskUserQuestion` tool to present the frame and get a
 
 ### 1b: The Monkey at Frame (All Verticals)
 
-Launch the Monkey agent. Same brief as `/insight-devloop` — covers all relevant verticals against the plan (Architecture, Data, Security, Integration, Operational). `monkey_findings_per_step` findings per selected vertical (default: 3). See devloop for vertical selection rules, brief template, and **plan-level scope rules** (no implementation-level findings — naming, validation, security hygiene are NOT Frame findings).
+Launch the Monkey agent. Fill template (`brief-templates/monkey-frame.md`). Covers all relevant verticals against the plan. `monkey_findings_per_step` findings per selected vertical (default: 3). See devloop for vertical selection rules and **plan-level scope rules** (no implementation-level findings).
 
 Context includes both plan.md and the Quartermaster's frame.md.
 
@@ -123,17 +117,23 @@ If any finding has `Survived: no`:
 - For architectural: stop and discuss (same as /insight-devloop)
 - For small/medium: if the finding would change the triage, re-triage even in speed mode (triage correctness is not optional). Otherwise log to `filtered-findings.md` and proceed.
 
+## Sentinel Gate
+
+Same as devloop — three checks before Step 2a, every run (including resume):
+
+> Manifest exists? Lock file exists? Test framework installed? Any fail (non-greenfield): stop. Greenfield: Task 0 must have run.
+
 ## Step 2: Build
 
 Same as `/insight-devloop`. No shortcuts at Build — this is where correctness lives.
 
 ### 2a: TDD — The Sentinel (Opus)
 
-Same as `/insight-devloop`. Read the Sentinel's SKILL.md, paste verbatim. Write context to `.insightsLoop/current/brief-sentinel.md` per devloop Step 2a (includes Sharpened Acceptance Criteria from frame.md, Worktree Assignments, and Scaffolding Checklist if greenfield).
+Same as `/insight-devloop`. Read Sentinel SKILL.md, fill template (`brief-templates/sentinel.md`), write to `.insightsLoop/current/brief-sentinel.md`.
 
 ### Storm — TDD Review (Opus)
 
-Same as `/insight-devloop` — Storm reviews the Sentinel's test contracts for gaps. Read Storm SKILL.md, paste verbatim, write context to `.insightsLoop/current/brief-storm-tdd.md` per devloop Step 2a.
+Same as `/insight-devloop` — Storm reviews the Sentinel's test contracts for gaps. Fill template (`brief-templates/storm-tdd.md`), write to `.insightsLoop/current/brief-storm-tdd.md`.
 
 Output: `.insightsLoop/current/storm-tdd.md`
 
@@ -143,7 +143,7 @@ If any finding is critical/high (missing acceptance criteria coverage): **dispat
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
-Same as `/insight-devloop`. Read the Shipwright's SKILL.md, paste verbatim. Write context to `.insightsLoop/current/brief-shipwright.md` per devloop Step 2b.
+Same as `/insight-devloop`. Fill template (`brief-templates/shipwright.md`), write to `.insightsLoop/current/brief-shipwright.md`.
 
 **Note:** The Build Monkey runs after Storm + Cartographer in Step 3b, with full analysis context. See "Build Monkey (all verticals)" below.
 
@@ -159,9 +159,9 @@ Same as `/insight-devloop`. Conflicts still stop the loop and go to the user.
 
 #### Storm + Cartographer (parallel)
 
-**The Storm (Opus)**: Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md`, paste verbatim. Write context to `.insightsLoop/current/brief-storm-verify.md` per devloop Step 3b. Add one instruction to the brief: "For each finding, assign a confidence score (0-100) based on how certain you are this is a real issue, not a theoretical concern. Add a Confidence column to all tables." The Storm handles both adversarial review and consistency in a single pass.
+**The Storm (Opus)**: Fill template (`brief-templates/storm-verify.md`), write to `.insightsLoop/current/brief-storm-verify.md`. Add to brief: "For each finding, assign a confidence score (0-100). Add a Confidence column to all tables." Both passes in one invocation.
 
-**The Cartographer (Sonnet)**: Launch as an Agent (same as devloop — paste SKILL.md verbatim, write context to `brief-cartographer.md`). Add one instruction to the brief: "For each finding, add a Confidence column (0-100) based on how certain you are this path is actually reachable and unguarded." Skip condition same as devloop.
+**The Cartographer (Sonnet)**: Fill template (`brief-templates/cartographer.md`), write to `brief-cartographer.md`. Add to brief: "For each finding, add a Confidence column (0-100)." Skip condition same as devloop.
 
 **Skip condition:** If the story is visual-only (layout, CSS, copy changes) with no new code paths, skip the Cartographer entirely. Mechanical path enumeration adds nothing when no branches exist to enumerate — Storm carries verification alone. Write an empty `edge-cases.md` (header only) for the archive and note "Skipped: visual-only change" at the top.
 
@@ -187,7 +187,7 @@ Cartographer output: `.insightsLoop/current/edge-cases.md` — same format with 
 
 #### Build Monkey (all verticals — after Storm + Cartographer)
 
-Same as `/insight-devloop` — single Monkey covers all relevant verticals (Architecture, Data, Security, Integration, Operational) in one pass. Receives: merged diff + storm-report + edge-cases + all vertical lenses.
+Same as `/insight-devloop` — fill template (`brief-templates/monkey-build.md`). Single Monkey covers all relevant verticals in one pass.
 
 Output: `.insightsLoop/current/monkey-build.md`
 

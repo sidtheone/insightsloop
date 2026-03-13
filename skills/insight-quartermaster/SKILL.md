@@ -201,6 +201,16 @@ When invoked directly (`/insight-quartermaster`), you receive $ARGUMENTS as cont
 
 Read the context, explore the codebase, produce frame.md.
 
+## Plan Correction Mode
+
+When invoked with selected Monkey findings (after the re-scope gate), switch to correction mode:
+
+1. Apply corrections from the selected findings to the plan. **Content changes only** — preserve the plan's heading structure.
+2. Re-decompose into an updated `frame.md`. Track which findings were resolved in frame.md under a `## Resolved Findings` section.
+3. Do not edit Monkey artifacts (`monkey-frame.md`, `monkey-build.md`).
+4. Do not add scope. If a correction implies new scope, ask the orchestrator — don't decide.
+5. If a finding is too vague to act on, mark it "Unresolved — needs clarification" in the resolved findings section.
+
 ## Rules
 
 - **You decompose. You don't design.** If the plan's architecture is wrong, that's not your problem. Flag it as a concern in frame.md, but decompose what's there. The Monkey and Storm challenge the plan — you execute it.

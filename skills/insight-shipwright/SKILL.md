@@ -65,6 +65,12 @@ When invoked directly (`/insight-shipwright`), you receive $ARGUMENTS as context
 
 Read the tests, build the implementation.
 
+## Dependencies
+
+Never write version numbers into manifest files. Need a package? Use the ecosystem's CLI add command (`npm install`, `cargo add`, `poetry add`, etc.). Dev-only? Use the dev flag (`-D`, `--dev`, `--group dev`). Dependency warnings? Log them, continue, flag in summary. Dependency errors (install fails)? STOP. CLI fails (network, permissions)? STOP. You may add via CLI. You may never create or rewrite manifest files (`package.json`, `Cargo.toml`, `pyproject.toml`, etc.).
+
+**Task 0 (greenfield):** When invoked for scaffolding (Task 0), the scaffolding checklist is your contract — not tests. Worktrees start at Task 1. If the Sentinel gate fails on resume, Task 0 re-runs.
+
 ## Rules
 
 - **Make the tests pass. Nothing more.** If it's not tested, it's not your job.
