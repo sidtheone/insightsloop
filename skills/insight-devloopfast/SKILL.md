@@ -106,7 +106,7 @@ For architectural: use the `AskUserQuestion` tool to present the frame and get a
 
 ### The Monkey at Frame (All Verticals)
 
-Launch the Monkey agent. Same brief as `/insight-devloop` — covers all relevant verticals against the plan (Architecture, Data, Security, Integration, Operational). One finding per selected vertical. See devloop for vertical selection rules and brief template.
+Launch the Monkey agent. Same brief as `/insight-devloop` — covers all relevant verticals against the plan (Architecture, Data, Security, Integration, Operational). `monkey_findings_per_step` findings per selected vertical (default: 3). See devloop for vertical selection rules, brief template, and **plan-level scope rules** (no implementation-level findings — naming, validation, security hygiene are NOT Frame findings).
 
 Output: `.insightsLoop/current/monkey-frame.md`
 

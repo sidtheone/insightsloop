@@ -201,15 +201,31 @@ Launch the Monkey agent (Opus). Construct her brief using the template in `.clau
 
 The Frame Monkey challenges the **plan** across all relevant verticals before any code is written. This is the cheapest place to catch issues — adjusting a plan costs nothing compared to fixing built code.
 
+**Scope: plan-level only.** The Frame Monkey reviews the plan, not imagined code. No code exists yet — findings must be about the design, not implementation details. If Storm or Cartographer would catch it when real code exists, it's NOT a Frame finding.
+
+**What IS a Frame finding:**
+- The plan requires data an API doesn't return (impossible requirement)
+- The architecture creates a hard dependency on something unreliable
+- Parallel worktrees will diverge because the plan doesn't define shared contracts
+- A design decision that's fine today but locks you into an expensive path
+- A silent assumption between components that nobody stated
+
+**What is NOT a Frame finding (gets caught later or doesn't matter):**
+- Naming conventions, component naming, file naming — code doesn't exist yet
+- Missing input validation — Storm catches this on real code
+- Standard security hygiene (API key handling, bounds checking) — Storm's job
+- "This component should be inlined" — the component doesn't exist yet
+- Any finding that starts with imagining what the code will look like
+
 **Verticals (applied to the plan, not code):**
 
 | Vertical | Lens Against Plan |
 |---|---|
-| **Architecture** | Does the plan introduce unnecessary coupling, over-abstraction, or YAGNI violations? |
-| **Data** | Are queries, indexes, transactions, and data integrity considered? Missing migration steps? |
-| **Security** | Auth gaps in the design? Unvalidated inputs? Secrets exposure? |
-| **Integration** | Cross-module seam assumptions? API contract mismatches? Naming conflicts? |
-| **Operational** | What breaks at 3am with this design? Monitoring gaps? Deploy safety? |
+| **Architecture** | Structural assumptions that paint you into a corner. Hard dependencies on unreliable things. Design decisions that are fine now but catastrophic at scale. |
+| **Data** | Does the plan require data that doesn't exist? Schema assumptions that conflict with reality. Migration paths that aren't reversible. |
+| **Security** | Architectural security gaps — auth model flaws, trust boundary mistakes, data exposure by design. Not implementation-level validation. |
+| **Integration** | Missing shared contracts between parallel work. API assumptions that conflict with real API behavior. Seam assumptions nobody stated. |
+| **Operational** | What in this *design* breaks at 3am? Single points of failure. Dependencies with no fallback. Deploy ordering that can't be rolled back. |
 
 **Vertical selection:** The orchestrator selects relevant verticals based on the plan:
 - Pure UI story → skip Data, Security (unless auth-related)
