@@ -15,6 +15,7 @@ A 4-step build loop that takes plan artifacts and ships verified code. Each step
 
 | Role | Persona | Model | Output |
 |------|---------|-------|--------|
+| Decomposition | **The Quartermaster** | Opus | `frame.md` |
 | TDD | **The Sentinel** | Opus | Failing test suite |
 | Builder | **The Shipwright** | Sonnet | Passing implementation in worktree |
 | Adversarial + Consistency | **The Storm** | Opus | `storm-report.md`, `storm-tdd.md` |
@@ -33,6 +34,7 @@ How to brief agents with values:
 - Monkey: she reads VALUES.md herself — values are her weapons
 
 **Crew SKILL.md files** define each crew member's stable identity, method, and rules. Read each crew member's SKILL.md **right before briefing that crew member** — not all upfront. This keeps context fresh and avoids loading instructions you won't need for several steps:
+- `.claude/skills/insight-quartermaster/SKILL.md` — read before Step 1 (Frame)
 - `.claude/skills/insight-sentinel/SKILL.md` — read before Step 2a
 - `.claude/skills/insight-storm/SKILL.md` — read before Step 2a (Storm TDD Review)
 - `.claude/skills/insight-shipwright/SKILL.md` — read before Step 2b
@@ -149,55 +151,42 @@ This skill expects `plan.md` with a `## Challenge` section. Search order: `$ARGU
 
 ## Step 1: Frame
 
-**Goal**: Read the plan, triage, detect greenfield, prepare for build.
+**Goal**: Decompose the plan into atomic buildable tasks, then stress-test.
 
-### Greenfield Detection
+The orchestrator does NOT decompose the plan itself. The Quartermaster does. The orchestrator's job at Frame is: invoke the Quartermaster, invoke the Monkey, present results, gate on user approval.
 
-Before triaging, check if the project needs scaffolding:
+**Why:** Orchestrators drift when they interpret plans (see LEARNINGS.md L-001). The same plan.md produces different worktree assignments across runs because the orchestrator makes decomposition decisions it was never designed to make. The Quartermaster eliminates this — one agent, one job, deterministic output.
 
-**Pass 1 — File existence (stack-agnostic):**
-1. Check for a dependency manifest (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, `pom.xml`, etc.)
-2. Check for a framework entry point (the file where the app starts — `app/layout.tsx`, `src/main.tsx`, `main.py`, `main.go`, `src/main.rs`, `index.html`, etc.)
-3. Check for framework config (`next.config.*`, `vite.config.*`, `django/settings.py`, `Makefile`, `docker-compose.yml`, etc.)
-4. If any core file is missing → greenfield
+### 1a: The Quartermaster (Opus)
 
-**Pass 2 — Wiring verification (runs even if Pass 1 finds all files):**
-5. Check that entry point has real content (not just a bare scaffold or empty export)
-6. Check that dependencies are declared in the manifest (framework listed as a dependency)
-7. Check that config connects to entry point (build tool knows where source lives)
-8. For web projects: check that CSS/style entry exists with framework directives if applicable
-9. If any wiring check fails → partially-scaffolded (treat as greenfield with pre-existing files noted)
+Read the Quartermaster's SKILL.md at `.claude/skills/insight-quartermaster/SKILL.md`. Paste the entire SKILL.md verbatim into the Agent prompt. Write context to `.insightsLoop/current/brief-quartermaster.md`:
 
-**If greenfield or partially-scaffolded:**
+```markdown
+# Quartermaster Brief
+## Plan
+[full plan.md content]
+## Values
+[VALUES.md content if exists, else "None"]
+## TDD Matrix
+[TDD-MATRIX.md content if exists, else "None"]
+```
 
-Use `AskUserQuestion`: "Detected [greenfield / partially-scaffolded] project. Files already present: [list]. Missing or unwired: [list]. Generate scaffolding checklist? [Approve / Skip / Edit]"
+The Quartermaster:
+1. Reads the plan
+2. Explores the codebase (quick survey — file existence, test conventions, shared files)
+3. Decomposes plan tasks into atomic worktree-level tasks
+4. Assigns worktrees with parallelization plan
+5. Maps test files to worktrees
+6. Sharpens ambiguous acceptance criteria
+7. Handles greenfield detection and scaffolding checklist
 
-If approved, generate checklist from plan's Architecture section. The checklist is stack-specific — derive from the chosen architecture:
-- Read the plan's Architecture section for stack choice
-- For each file needed to boot the stack, list: filename, minimum viable content (what it must contain to wire correctly), and whether it exists already
-- For partially-scaffolded: mark existing files as "exists — verify wiring" vs missing as "create"
-- Include design tokens from Visual Spec if present (CSS custom properties, font imports, color palette)
-- Present checklist to user for confirmation — the LLM derives the checklist, the user validates it
+**Output:** `.insightsLoop/current/frame.md` — written by the Quartermaster directly.
 
-Write checklist to `.insightsLoop/current/scaffolding-checklist.md`. This file is passed to Sentinel via brief and archived with the run (keep-list).
+**IMPORTANT:** The orchestrator does NOT modify frame.md after the Quartermaster writes it. frame.md is the Quartermaster's artifact. If it needs changes, re-invoke the Quartermaster with updated context.
 
-### Triage
+### 1b: The Monkey at Frame (All Verticals)
 
-Read `plan.md`. Confirm the triage label from the `## Challenge` section:
-
-| Size | Criteria | Steps to run |
-|------|----------|--------------|
-| Small | 1 file, no new interfaces, existing patterns | 2 → 3 (Storm skips Pass 2 consistency for single-worktree) |
-| Medium | Multi-file, existing patterns | All steps |
-| Architectural | New interfaces, schema changes, public API | All steps, sequential challenge |
-
-**Output artifact**: `.insightsLoop/current/frame.md` — confirmed triage label, task list with parallelization plan (which tasks share a worktree, which are independent), and which test files belong to which Shipwright.
-
-Use the `AskUserQuestion` tool to present the frame and get approval. Options: "Approve — start building", "Adjust — change triage or scope", "Abort — back to plan".
-
-### The Monkey at Frame (All Verticals)
-
-Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=frame. Context: plan.md + frame.md.
+Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=frame. Context: plan.md + frame.md (the Quartermaster's output).
 
 The Frame Monkey challenges the **plan** across all relevant verticals before any code is written. This is the cheapest place to catch issues — adjusting a plan costs nothing compared to fixing built code.
 
@@ -241,9 +230,15 @@ Output: `.insightsLoop/current/monkey-frame.md`
 
 **IMPORTANT: Write `monkey-frame.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
-Present the Monkey's findings to the user alongside the frame.
+### 1c: Present and Gate
 
-If any finding has `Survived: no`, use `AskUserQuestion`: "Monkey challenged the frame across [N] verticals: [finding summaries]. Re-scope, ignore, or abort?" Options: "Re-scope — adjust frame / Ignore — proceed as planned / Abort — back to plan"
+Present the Quartermaster's frame.md and the Monkey's findings to the user together.
+
+Use the `AskUserQuestion` tool: "Frame and Monkey review complete. [summary of frame: N tasks, M worktrees, parallelization shape]. [summary of Monkey findings]." Options: "Approve — start building", "Adjust — change triage or scope", "Abort — back to plan"
+
+If any Monkey finding has `Survived: no`, highlight it explicitly in the gate question.
+
+If adjust: re-invoke the Quartermaster with the user's feedback added to the brief. Do NOT manually edit frame.md — the Quartermaster owns it.
 
 If re-scope: the orchestrator adjusts the frame (triage label, parallelization plan) — frame.md is orchestrator-owned, not code. No agent needed for frame changes.
 
@@ -262,7 +257,9 @@ Read the Sentinel's SKILL.md at `.claude/skills/insight-sentinel/SKILL.md`. Past
 ## Plan
 [full plan sections: Intent, Out of Scope, Architecture, Tasks, Key Files — NOT Challenge]
 ## Acceptance Criteria
-[from plan, verbatim]
+[use Sharpened Acceptance Criteria from frame.md — these are the Quartermaster's precision-refined versions. If frame.md has no sharpened criteria, fall back to plan.md originals]
+## Worktree Assignments
+[from frame.md — so Sentinel knows which test files belong to which worktree]
 ## Scaffolding Checklist
 [read from .insightsLoop/current/scaffolding-checklist.md if greenfield, else "Not greenfield — skip"]
 ## TDD Matrix

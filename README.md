@@ -1,6 +1,6 @@
-# InsightsLoop (beta 0.10)
+# InsightsLoop (beta 0.11)
 
-An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline. Structured briefs, greenfield detection, ATDD, 3-agent fix pipeline, and immersive themed orchestration.
+An opinionated dev engine for human+AI teams. 11 skills, 9 personas, one pipeline. Structured briefs, greenfield detection, ATDD, 3-agent fix pipeline, deterministic work decomposition, and immersive themed orchestration.
 
 ```
 /insight-plan → /insight-devloop (or /insight-devloopfast) → /insight-retro
@@ -35,6 +35,7 @@ Every step has a persona. These aren't decoration — they define how each agent
 | Persona | Role | Skill | Model |
 |---------|------|-------|-------|
 | **The Navigator** | Veteran planner — leads with constraints, asks the uncomfortable question | `/insight-plan` | Opus |
+| **The Quartermaster** | Duty roster — turns charts into watch assignments, no crew member guesses their job | `/insight-quartermaster` | Opus |
 | **The Sentinel** | Law writer — one clause, one assertion, one unambiguous verdict | `/insight-sentinel` | Opus |
 | **The Shipwright** | Stonemason — quiet pride, won't touch what isn't his | `/insight-shipwright` | Sonnet |
 | **The Storm** | Hull inspector — presses seams, traces consequences one layer further | `/insight-storm` | Opus |
@@ -50,7 +51,7 @@ Every step has a persona. These aren't decoration — they define how each agent
 1. **`/insight-plan`** — The Navigator explores the codebase, asks hard questions, designs architecture, writes Acceptance Criteria, then runs Monkey + Storm in parallel to challenge the plan before it ships. Produces `plan.md` (with Challenge section and Acceptance Criteria). Visual Spec section uses explicit MOVE/DELETE/ADD/KEEP instructions — every MOVE implies a DELETE at the source. For UI stories, asks whether to generate a visual HTML mockup (`--mockup` via `/frontend-design`) or keep it structural (ASCII wireframe). **Theme-aware** — Navigator speaks in themed voice between phases, plan content stays plain.
 
 2. **`/insight-devloop`** — The crew takes the charts and builds:
-   - **Frame**: Greenfield detection (2-pass: existence + wiring), scaffolding checklist, triage, parallelization plan. **Monkey** challenges the plan across all relevant verticals (Architecture, Data, Security, Integration, Operational) — cheapest place to catch issues.
+   - **Frame**: **Quartermaster** decomposes the plan into atomic tasks, worktree assignments, parallelization plan, test file mapping, and sharpened acceptance criteria. Handles greenfield detection and scaffolding. **Monkey** challenges the plan across all relevant verticals (Architecture, Data, Security, Integration, Operational) — cheapest place to catch issues. Orchestrator just routes — no interpretation.
    - **Build**: The Sentinel writes acceptance tests first (ATDD), then per-task contracts (Opus) → **Storm TDD Review** checks test contracts for gaps → The Shipwright builds (Sonnet, parallel worktrees)
    - **Ship**: Merge → Storm Verify + Cartographer in parallel (both as Agents) → single **Build Monkey** covers all verticals on merged diff → converge → consolidated findings → 3-agent fix pipeline (Storm specs → Sentinel tests → Shipwright patches)
    - **Done**: Write summary, archive run, suggest `/insight-retro`
@@ -64,6 +65,7 @@ Every step has a persona. These aren't decoration — they define how each agent
 
 | Step | Agent | What it does |
 |------|-------|-------------|
+| Frame | **Quartermaster** | Decomposes plan into atomic tasks, worktree assignments, test file mapping, sharpened acceptance criteria |
 | Frame | **Monkey** (all verticals) | Challenges the plan across arch/data/security/integration/ops before code exists |
 | TDD | **Storm** (TDD Review) | Adversarial review of Sentinel's test contracts — missing coverage, wrong abstraction |
 | Ship | **Storm** (Verify) + **Cartographer** (parallel) | Adversarial code review + edge case enumeration on merged diff |
@@ -73,19 +75,21 @@ Every step has a persona. These aren't decoration — they define how each agent
 
 Each crew member can be invoked directly for focused work outside the loop:
 
-4. **`/insight-sentinel`** — TDD contract writer. Derives failing test suites from plan intent. Tests behavior, not implementation. Boundary conditions are not optional.
+4. **`/insight-quartermaster`** — Work decomposition agent. Takes any plan.md (from Navigator, hand-written, or another engine) and produces a deterministic frame.md — atomic tasks, worktree assignments, parallelization plan, test file mapping, sharpened acceptance criteria. Explores the codebase to make informed split decisions. Handles greenfield detection and scaffolding checklists. Never modifies the plan — reads it, decomposes it, flags concerns.
 
-5. **`/insight-shipwright`** — Implementation builder. Makes failing tests pass — fast, clean, no wasted wood. Follows Visual Spec as a hard instruction. Receives mockup as visual reference when available. Invokes `/frontend-design` for UI components, constrained by project values. 3 attempts max.
+6. **`/insight-sentinel`** — TDD contract writer. Derives failing test suites from plan intent. Tests behavior, not implementation. Boundary conditions are not optional.
 
-6. **`/insight-storm`** — Adversarial code reviewer + consistency enforcer. Four modes: Verify (adversarial review + consistency), Plan Review (challenge plan assumptions and acceptance criteria), TDD Review (check test contracts for gaps), and Fix Spec (write fix specifications for Sentinel and Shipwright to implement). Traces inputs, outputs, irreversible decisions, and implicit assumptions. Separates introduced vs pre-existing issues.
+7. **`/insight-shipwright`** — Implementation builder. Makes failing tests pass — fast, clean, no wasted wood. Follows Visual Spec as a hard instruction. Receives mockup as visual reference when available. Invokes `/frontend-design` for UI components, constrained by project values. 3 attempts max.
 
-7. **`/insight-monkey`** — The Monkey, standalone. Point her at a file, a plan, a diff, or a decision. She picks techniques from her arsenal, applies them across verticals with specificity, and produces structured findings. Not a reviewer — a disruptor.
+8. **`/insight-storm`** — Adversarial code reviewer + consistency enforcer. Four modes: Verify (adversarial review + consistency), Plan Review (challenge plan assumptions and acceptance criteria), TDD Review (check test contracts for gaps), and Fix Spec (write fix specifications for Sentinel and Shipwright to implement). Traces inputs, outputs, irreversible decisions, and implicit assumptions. Separates introduced vs pre-existing issues.
 
-8. **`/insight-edge-case-hunter`** — The Cartographer maps every code path mechanically. Called at Ship (as an Agent for parallel execution), also standalone. Markdown table output. Empty report is valid.
+9. **`/insight-monkey`** — The Monkey, standalone. Point her at a file, a plan, a diff, or a decision. She picks techniques from her arsenal, applies them across verticals with specificity, and produces structured findings. Not a reviewer — a disruptor.
 
-9. **`/insight-ux`** — The Helmsman. Minimalist UX designer invoked when a story has a user-facing surface. Produces: user goal, flow (max 5 steps), layout (ASCII wireframe or HTML mockup via `--mockup`), cut list, and copy. With `--mockup`, reads existing pages for current design scheme and invokes `/frontend-design` constrained by project values. Mockup saved to `.insightsLoop/current/mockup.html` and passed to the Shipwright as visual contract. Subtract, don't add.
+10. **`/insight-edge-case-hunter`** — The Cartographer maps every code path mechanically. Called at Ship (as an Agent for parallel execution), also standalone. Markdown table output. Empty report is valid.
 
-10. **`/insight-retro`** — The Lookout captures what the crew learned. Reads all artifacts including Monkey findings and filtered findings. Evaluates the confidence filter. Looks across multiple runs for patterns. Updates project knowledge.
+11. **`/insight-ux`** — The Helmsman. Minimalist UX designer invoked when a story has a user-facing surface. Produces: user goal, flow (max 5 steps), layout (ASCII wireframe or HTML mockup via `--mockup`), cut list, and copy. With `--mockup`, reads existing pages for current design scheme and invokes `/frontend-design` constrained by project values. Mockup saved to `.insightsLoop/current/mockup.html` and passed to the Shipwright as visual contract. Subtract, don't add.
+
+12. **`/insight-retro`** — The Lookout captures what the crew learned. Reads all artifacts including Monkey findings and filtered findings. Evaluates the confidence filter. Looks across multiple runs for patterns. Updates project knowledge.
 
 ## Visual Mockup Flow
 
@@ -174,6 +178,7 @@ Runs are named `run-NNNN-feature-name`. The retro reads across runs to spot recu
 
 ## Design Principles
 
+- **Orchestrators route, not interpret.** The orchestrator never decomposes plans, assigns worktrees, or invents sub-tasks. The Quartermaster does that. Same input, same output, every run.
 - **The Sentinel and The Shipwright are never the same agent.** Prevents correlated failure.
 - **The finder never writes the fix.** Storm specs what's wrong, Sentinel writes the regression test, Shipwright patches. Three agents, three perspectives, no blind spots.
 - **Paste SKILL.md verbatim.** Orchestrators never paraphrase, summarize, or select sections. The crew speaks for themselves.
@@ -215,7 +220,7 @@ Active run in `.insightsLoop/current/`. Archived to `.insightsLoop/run-NNNN-feat
 ## Install
 
 ```bash
-# Install everything (10 skills, 3 themes, config)
+# Install everything (11 skills, 3 themes, config)
 npx insightsloop init
 
 # Or pick specific skills
@@ -226,6 +231,8 @@ npx insightsloop update
 ```
 
 This copies skills to `.claude/skills/`, themes to `.insightsLoop/themes/`, and creates `.insightsLoop/config.md` with defaults (theme: pirate, 3 monkey findings per vertical, confidence threshold 80).
+
+See [`LEARNINGS.md`](LEARNINGS.md) for structural insights from engine development — why roles exist, why boundaries matter, and what went wrong before.
 
 Optionally add `VALUES.md` and `TDD-MATRIX.md` to your project root — every skill loads them before execution. Use [AssertValues](https://assertvalues.dev/) to generate sharp, constraining values through conversation.
 
@@ -285,6 +292,12 @@ The Monkey self-reports verification depth in every finding:
 Every finding must state what was and wasn't verified. "I did NOT verify whether a guard exists upstream" with confidence 55 is more useful than a confident-sounding 90 that's wrong.
 
 ## Version History
+
+### beta 0.11
+- **The Quartermaster**: New crew member. Dedicated decomposition agent takes any plan.md and produces deterministic frame.md — atomic tasks, worktree assignments, parallelization plan, test file mapping, sharpened acceptance criteria. Removes orchestrator interpretation at Frame (see LEARNINGS.md L-001, L-002, L-003).
+- **Acceptance criteria sharpening**: Quartermaster refines vague criteria ("User sees results") into Sentinel-ready precision ("User sees up to 20 results sorted by score descending"). Plan.md stays unchanged — sharpened criteria live in frame.md.
+- **Engine-agnostic devloop**: Devloop now accepts plans from any source (Navigator, hand-written, other engines) via the Quartermaster normalization layer.
+- **LEARNINGS.md**: 16 structural lessons from engine development and 3 real runs. Unlike PATTERNS.md (tactical), these are about why roles exist and why boundaries matter.
 
 ### beta 0.10
 - **Storm TDD Review**: Monkey at TDD replaced with Storm reviewing test contracts. Adversarial test gap analysis is Storm's lane, not chaos.

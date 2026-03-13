@@ -6,6 +6,7 @@ const readline = require("readline");
 
 const SKILLS = [
   "insight-plan",
+  "insight-quartermaster",
   "insight-devloop",
   "insight-devloopfast",
   "insight-sentinel",

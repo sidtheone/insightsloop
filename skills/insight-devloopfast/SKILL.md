@@ -81,17 +81,24 @@ Same as `/insight-devloop` — `plan.md` with `## Challenge` section must exist.
 
 ## Step 1: Frame (Auto-Triage)
 
-### Greenfield Detection
+**Goal**: Decompose the plan into atomic buildable tasks, then stress-test. Same as devloop — the Quartermaster decomposes, the orchestrator routes.
 
-Same two-pass detection as `/insight-devloop`:
-- **Pass 1:** File existence — stack-agnostic (dependency manifest, framework entry point, framework config)
-- **Pass 2:** Wiring verification (real content in entry point, dependencies declared, config connects to source)
+### 1a: The Quartermaster (Opus)
 
-If greenfield/partially-scaffolded: use `AskUserQuestion` even in speed mode — scaffolding correctness is not auto-approvable. Generate checklist, write to `.insightsLoop/current/scaffolding-checklist.md`. Sentinel receives it in her brief.
+Same as `/insight-devloop` Step 1a. Read Quartermaster SKILL.md, paste verbatim, write brief to `.insightsLoop/current/brief-quartermaster.md`. The Quartermaster handles:
+- Codebase survey, greenfield detection, scaffolding checklist
+- Task decomposition into atomic worktree-level tasks
+- Worktree assignments with parallelization plan
+- Test file mapping
+- Acceptance criteria sharpening
 
-### Triage
+**Output:** `.insightsLoop/current/frame.md` — written by the Quartermaster directly.
 
-Read `plan.md`. Determine triage from `## Challenge` section:
+If greenfield/partially-scaffolded: use `AskUserQuestion` even in speed mode — scaffolding correctness is not auto-approvable.
+
+### Triage (from frame.md)
+
+Read the Quartermaster's frame.md. Confirm triage:
 
 | Size | Criteria | What runs | Approval |
 |------|----------|-----------|----------|
@@ -99,14 +106,14 @@ Read `plan.md`. Determine triage from `## Challenge` section:
 | Medium | Multi-file, existing patterns | Build → Ship (skip normalize) | Auto |
 | Architectural | New interfaces, schema changes, public API | Full loop | **Wait for human** |
 
-Write `.insightsLoop/current/frame.md` with triage label and task parallelization plan.
-
 For small/medium: log the triage decision and proceed immediately.
 For architectural: use the `AskUserQuestion` tool to present the frame and get approval. Options: "Approve — start building", "Adjust — change triage or scope", "Abort — back to plan".
 
-### The Monkey at Frame (All Verticals)
+### 1b: The Monkey at Frame (All Verticals)
 
 Launch the Monkey agent. Same brief as `/insight-devloop` — covers all relevant verticals against the plan (Architecture, Data, Security, Integration, Operational). `monkey_findings_per_step` findings per selected vertical (default: 3). See devloop for vertical selection rules, brief template, and **plan-level scope rules** (no implementation-level findings — naming, validation, security hygiene are NOT Frame findings).
+
+Context includes both plan.md and the Quartermaster's frame.md.
 
 Output: `.insightsLoop/current/monkey-frame.md`
 
@@ -122,7 +129,7 @@ Same as `/insight-devloop`. No shortcuts at Build — this is where correctness 
 
 ### 2a: TDD — The Sentinel (Opus)
 
-Same as `/insight-devloop`. Read the Sentinel's SKILL.md, paste verbatim. Write context to `.insightsLoop/current/brief-sentinel.md` per devloop Step 2a (includes Acceptance Criteria and Scaffolding Checklist if greenfield).
+Same as `/insight-devloop`. Read the Sentinel's SKILL.md, paste verbatim. Write context to `.insightsLoop/current/brief-sentinel.md` per devloop Step 2a (includes Sharpened Acceptance Criteria from frame.md, Worktree Assignments, and Scaffolding Checklist if greenfield).
 
 ### Storm — TDD Review (Opus)
 
