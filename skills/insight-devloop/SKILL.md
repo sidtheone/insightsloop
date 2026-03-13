@@ -196,7 +196,11 @@ Output: `.insightsLoop/current/monkey-frame.md`
 
 **IMPORTANT: Write `monkey-frame.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
 
-Present the Monkey's finding to the user alongside the frame. If `Survived: no`, discuss before proceeding.
+Present the Monkey's finding to the user alongside the frame.
+
+If `Survived: no`, use `AskUserQuestion`: "Monkey challenged the frame: [finding summary]. Re-scope, ignore, or abort?" Options: "Re-scope — adjust frame / Ignore — proceed as planned / Abort — back to plan"
+
+If re-scope: the orchestrator adjusts the frame (triage label, parallelization plan) — frame.md is orchestrator-owned, not code. No agent needed for frame changes.
 
 ## Step 2: Build
 
@@ -234,7 +238,11 @@ Output: `.insightsLoop/current/monkey-tdd.md`
 
 **IMPORTANT: Write `monkey-tdd.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
 
-If `Survived: no` and the finding is specific enough to act on, add the test. If `Survived: yes`, move on. Present the finding to the user either way.
+Present the finding to the user.
+
+If `Survived: no` and the finding is specific enough to act on, use `AskUserQuestion`: "Monkey found a test blind spot: [finding summary]. Add the test?" Options: "Add test / Ignore / Rethink scope"
+
+If add test: **dispatch to the Sentinel** — re-invoke her with a brief containing the Monkey's finding and ask her to write the missing contract. The orchestrator does NOT write the test itself. The Sentinel owns all test authorship.
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
@@ -268,7 +276,9 @@ Output: `.insightsLoop/current/monkey-build.md`
 
 **IMPORTANT: Write `monkey-build.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
-If `Survived: no`, investigate the seam before merging. If `Survived: yes`, proceed to merge.
+If `Survived: no`, use `AskUserQuestion`: "Monkey found a build seam issue: [finding summary]. Investigate before merge?" Options: "Investigate / Proceed anyway / Stop"
+
+If investigate: **dispatch to the Storm** — invoke her in Verify Mode on the specific seam the Monkey identified (the files/modules where the assumption mismatch lives). Storm reports back. If Storm confirms the issue, it enters the consolidated findings and goes through the fix dispatch matrix at Ship. The orchestrator does NOT fix the seam itself.
 
 **Output artifact**: Passing implementations in worktrees.
 
@@ -373,6 +383,17 @@ Merge findings from all sources: `monkey-frame.md`, `monkey-tdd.md`, `monkey-bui
 **Step 2: Triage all actionable findings.** Using the fix dispatch matrix below, assign each actionable finding to the correct fix route. Present the triage to the user.
 
 Use `AskUserQuestion`: "Consolidated findings: [N] total, [M] actionable. Triage: [N] for full pipeline, [N] for Shipwright-direct. Fix these, skip to backlog, or discuss?" Options: "Fix listed / Skip to backlog / Discuss"
+
+### Monkey Findings Dispatch Matrix
+
+The Monkey runs at every step. When she finds something (`Survived: no`), the right crew member handles it — not the orchestrator.
+
+| Monkey Step | Finding Type | Dispatched To | What They Do |
+|---|---|---|---|
+| Frame | Scope/triage challenge | Orchestrator (frame.md is not code) | Adjust triage label or parallelization plan |
+| TDD | Test blind spot | **Sentinel** (re-invoke) | Write the missing test contract |
+| Build | Integration seam / assumption mismatch | **Storm** (invoke on seam) | Verify the seam, report finding for fix pipeline |
+| Ship | Operational edge case | Enters consolidated findings | Goes through fix dispatch matrix below |
 
 ### Fix Dispatch Matrix
 

@@ -108,7 +108,7 @@ Launch the Monkey agent. Same brief as `/insight-devloop`. She produces `.insigh
 
 If `Survived: no`:
 - For architectural: stop and discuss (same as /insight-devloop)
-- For small/medium: log to `filtered-findings.md`, proceed. But if the Monkey's finding would change the triage (e.g., a "small" is actually "medium"), re-triage even in speed mode. Triage correctness is not optional.
+- For small/medium: if the finding would change the triage, re-triage even in speed mode (triage correctness is not optional). Otherwise log to `filtered-findings.md` and proceed.
 
 ## Step 2: Build
 
@@ -124,7 +124,7 @@ Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full a
 
 **IMPORTANT: Write `monkey-tdd.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
 
-If `Survived: no` and the finding is a concrete test case (not abstract), add the test automatically. If it's abstract or low confidence, log to `filtered-findings.md`. No human gate — the test either gets added by the orchestrator or it doesn't.
+If `Survived: no` and the finding is a concrete test case (not abstract): **dispatch to the Sentinel** — re-invoke her to write the missing contract. The orchestrator does NOT write the test itself. If abstract or low confidence, log to `filtered-findings.md`. In speed mode, Sentinel dispatch happens without a user gate — the test gets added automatically.
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
@@ -136,7 +136,7 @@ Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full a
 
 **IMPORTANT: Write `monkey-build.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
 
-If `Survived: no`, log to `filtered-findings.md`. Proceed to merge regardless — but if the finding specifically identifies a naming mismatch between worktrees, flag it for the merge step so it gets resolved there.
+If `Survived: no` and confidence is high: **dispatch to the Storm** — invoke her on the specific seam. Storm reports back; if confirmed, the finding enters consolidated findings for the fix pipeline. If low confidence, log to `filtered-findings.md`. Proceed to merge regardless — but if the finding specifically identifies a naming mismatch between worktrees, flag it for the merge step so it gets resolved there.
 
 ## Step 3: Ship (Filtered)
 
@@ -207,6 +207,17 @@ After all three agents return and their artifacts are written to disk:
 **Location column contract:** Same as devloop — `file.ts:33` for actionable, `[concept]` prefix for conceptual (straight to Backlog).
 
 **Step 2: Triage using the fix dispatch matrix (same as devloop).** Additional filter for speed mode: only 80+ confidence findings enter the pipeline. Below-threshold → `filtered-findings.md`.
+
+### Monkey Findings Dispatch Matrix
+
+Same as devloop — Monkey findings are dispatched to the right crew member, not handled by the orchestrator. In speed mode, TDD dispatch (Sentinel) skips the user gate.
+
+| Monkey Step | Finding Type | Dispatched To | Speed Mode Behavior |
+|---|---|---|---|
+| Frame | Scope/triage challenge | Orchestrator (frame.md is not code) | Auto if doesn't change triage, gate if it does |
+| TDD | Test blind spot | **Sentinel** (re-invoke) | Auto-dispatch, no user gate |
+| Build | Integration seam | **Storm** (invoke on seam) | Only if high confidence, else filtered |
+| Ship | Operational edge case | Consolidated findings | Goes through fix dispatch matrix below |
 
 ### Fix Dispatch Matrix
 
