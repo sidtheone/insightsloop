@@ -3,7 +3,7 @@ name: insight-devloopfast
 description: "Speed mode build loop. Same crew, same Monkey, less ceremony. Auto-triages (no approval gate for small/medium), confidence-filters findings (80+ only). The Monkey never sleeps — she just doesn't block. Use when you trust the plan and want to ship fast. Trigger on: 'fast build', 'quick build', 'devloopfast', 'speed mode', 'just build it'."
 model: opus
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npx jest*), Bash(npx tsc*), Bash(git *), Agent, Skill(insight-edge-case-hunter), Skill(frontend-design), AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npx jest*), Bash(npx tsc*), Bash(git *), Agent, Skill(frontend-design), AskUserQuestion
 ---
 
 # DevLoopFast — Speed Mode
@@ -150,7 +150,7 @@ Same as `/insight-devloop`. Conflicts still stop the loop and go to the user.
 
 **The Storm (Opus)**: Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md`, paste verbatim. Write context to `.insightsLoop/current/brief-storm-verify.md` per devloop Step 3b. Add one instruction to the brief: "For each finding, assign a confidence score (0-100) based on how certain you are this is a real issue, not a theoretical concern. Add a Confidence column to all tables." The Storm handles both adversarial review and consistency in a single pass.
 
-**The Cartographer (Sonnet)**: Invoke `/insight-edge-case-hunter` as the actual skill (use the Skill tool, not a general-purpose agent). Add one instruction: "For each finding, add a Confidence column (0-100) based on how certain you are this path is actually reachable and unguarded." Skip condition same as devloop.
+**The Cartographer (Sonnet)**: Launch as an Agent (same as devloop — paste SKILL.md verbatim, write context to `brief-cartographer.md`). Add one instruction to the brief: "For each finding, add a Confidence column (0-100) based on how certain you are this path is actually reachable and unguarded." Skip condition same as devloop.
 
 **Skip condition:** If the story is visual-only (layout, CSS, copy changes) with no new code paths, skip the Cartographer entirely. Mechanical path enumeration adds nothing when no branches exist to enumerate — Storm carries verification alone. Write an empty `edge-cases.md` (header only) for the archive and note "Skipped: visual-only change" at the top.
 

@@ -3,7 +3,7 @@ name: insight-devloop
 description: "4-step build loop for human+AI teams. Consumes plan.md (with Challenge section) from /insight-plan, then executes: Frame (triage) → Build (TDD + parallel worktrees) → Ship (merge + normalize + verify). Use after /plan produces artifacts, or for any scoped task ready to build. Trigger on: 'build this', 'execute the plan', 'run devloop', 'start building', or when plan.md exists and user wants to proceed."
 model: opus
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npx jest*), Bash(npx tsc*), Bash(git *), Agent, Skill(insight-edge-case-hunter), Skill(frontend-design), AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npx jest*), Bash(npx tsc*), Bash(git *), Agent, Skill(frontend-design), AskUserQuestion
 argument-hint: "[path-to-plan.md]"
 ---
 
@@ -37,6 +37,7 @@ How to brief agents with values:
 - `.claude/skills/insight-storm/SKILL.md` — read before Step 2a (Storm TDD Review)
 - `.claude/skills/insight-shipwright/SKILL.md` — read before Step 2b
 - `.claude/skills/insight-storm/SKILL.md` — re-read before Step 3b (Storm Verify)
+- `.claude/skills/insight-edge-case-hunter/SKILL.md` — read before Step 3b (Cartographer)
 
 ### Brief Construction Rules
 
@@ -354,7 +355,15 @@ Output: `.insightsLoop/current/storm-report.md` (format defined in Storm's SKILL
 
 **IMPORTANT: Write `storm-report.md` immediately.** When the Storm agent returns, write its findings to `.insightsLoop/current/storm-report.md` before proceeding. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
-**The Cartographer — Edge Case Hunter (Sonnet)** — invoke `/insight-edge-case-hunter` as the actual skill (use the Skill tool, not a general-purpose agent). Pass the merged diff as input. The Cartographer's SKILL.md defines her method and output format — do not paraphrase or substitute with an ad-hoc brief.
+**The Cartographer — Edge Case Hunter (Sonnet)** — launch as an Agent (not a Skill) so she can run in parallel with Storm. Read the Cartographer's SKILL.md at `.claude/skills/insight-edge-case-hunter/SKILL.md`. Paste the entire SKILL.md verbatim into the Agent prompt. Write context to `.insightsLoop/current/brief-cartographer.md`:
+
+```markdown
+# Cartographer Brief
+## Diff
+[full merged diff]
+## Values
+[VALUES.md content if exists, else "None"]
+```
 
 **Skip condition:** If the story is visual-only (layout, CSS, copy changes) with no new code paths, skip the Cartographer entirely. Mechanical path enumeration adds nothing when no branches exist to enumerate — Storm carries verification alone. Write an empty `edge-cases.md` (header only) for the archive and note "Skipped: visual-only change" at the top.
 
