@@ -256,6 +256,12 @@ Every finding must state what was and wasn't verified. "I did NOT verify whether
 
 **Why this matters:** In a full-codebase audit (EcoTicker, 27 findings), v1 Monkey reported average confidence of 82 with 48% accuracy. After adding calibration, v2 reported average confidence of 69 with ~80% accuracy. The rule doesn't make Monkey smarter — it makes Monkey honest about what it checked.
 
+## Documentation
+
+- **[Architecture Diagram](docs/architecture.md)** — Mermaid diagrams of the pipeline, crew assignments, artifact flow, and chaos agent integration
+- **[Credits & Acknowledgments](docs/CREDITS.md)** — Attribution for BMAD Method, frontend-design skill, and AssertValues
+- **[Deferred Findings](FUTURE.md)** — Issues from the initial adversarial review, cut for beta
+
 ## Known Limitations
 
 - The Monkey's quality depends on the Opus model. On weaker models, chaos degrades to noise.
