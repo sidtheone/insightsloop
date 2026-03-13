@@ -87,7 +87,20 @@ Use the `AskUserQuestion` tool to confirm which stories are v1 and which story t
 
 ## Phase 2: Codebase Exploration
 
-**Goal**: Understand relevant existing code and patterns deeply.
+**Goal**: Understand relevant existing code and patterns deeply. Detect greenfield.
+
+### Greenfield Check
+
+Before exploring, check if the project needs scaffolding:
+1. Check if `package.json` (or equivalent) exists in project root
+2. Check if framework entry file exists (e.g., `app/layout.tsx`, `src/main.tsx`)
+3. Check if framework config exists (e.g., `next.config.*`, `vite.config.*`)
+4. If files exist, check wiring: non-empty content, layout wraps children, CSS has directives, framework in deps
+5. If any check fails → note as greenfield or partially-scaffolded
+
+If greenfield: note it for Phase 4 (Architecture must include stack choice and scaffolding) and Phase 5 (Triage must account for scaffolding work). The devloop Frame step will generate the detailed scaffolding checklist — the planner just needs to know it's greenfield so sizing is correct.
+
+### Exploration
 
 1. Launch 2-3 code-explorer agents in parallel. Each targets a different aspect:
    - Similar features and their implementation patterns
@@ -95,9 +108,9 @@ Use the `AskUserQuestion` tool to confirm which stories are v1 and which story t
    - UI patterns, testing approaches, or extension points
    Each agent must return a list of 5-10 key files.
 2. Read all key files identified by agents.
-3. Present findings summary to user.
+3. Present findings summary to user. If greenfield, note: "This is a greenfield/partially-scaffolded project — scaffolding tasks will be added to the build."
 
-**Output**: Codebase context summary with key file references.
+**Output**: Codebase context summary with key file references. Greenfield status.
 
 ## Phase 3: Clarifying Questions
 
@@ -237,11 +250,12 @@ If Monkey `Survived: no` or Storm finds critical/high issues, the Navigator reth
 
 **Goal**: Stress-test the plan before it leaves this skill.
 
-Run a single combined pass — three lenses, one output:
+Run a single combined pass — four lenses, one output:
 
 1. **Values fit**: Check against project values (YAGNI, simplicity, reversibility). Is any part more complex than the problem requires?
-2. **Dependencies**: Map what depends on what. Which tasks can parallelize? Which must be sequential?
-3. **Adversarial**: What's the most likely way this goes wrong? What assumption hasn't been questioned?
+2. **Greenfield sizing**: If greenfield/partially-scaffolded (from Phase 2), bump triage one size up. Scaffolding adds files, wiring, and acceptance tests that don't exist yet. A "small" feature on a greenfield project is at minimum "medium". A "medium" feature on greenfield is "architectural". Note this explicitly in the Triage section.
+3. **Dependencies**: Map what depends on what. Which tasks can parallelize? Which must be sequential? If greenfield, scaffolding is a dependency for everything — it must be Task 0.
+4. **Adversarial**: What's the most likely way this goes wrong? What assumption hasn't been questioned?
 
 For architectural changes, run these sequentially (values → adversarial → realign → dependencies) because adversarial review changes the plan, which changes the dependency graph.
 
@@ -320,6 +334,7 @@ How to write this section:
 
 ### Triage
 [small / medium / architectural]
+[If greenfield: bump one size up. A "small" feature on a greenfield project is "medium" because scaffolding adds files, wiring, and acceptance tests. A "medium" feature on greenfield is "architectural" because you're creating the project structure AND the feature.]
 
 ### Values Alignment
 [YAGNI check — what was cut and why]
