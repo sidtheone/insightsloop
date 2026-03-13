@@ -64,7 +64,7 @@ Also read `.insightsLoop/config.md` for engine tunables if it exists. If it does
 **Monkey brief template:** Use the same template as devloop at `.claude/skills/insight-devloop/reference/monkey-brief-template.md`. `monkey_findings_per_step` applies per vertical (default: 3). Tell the Monkey: "Produce {N} findings per vertical, each using a different technique."
 
 **Theme loading:** Same as devloop — if `config.md` has a theme set (not `none`), load `.insightsLoop/themes/{setting}.md`. See devloop SKILL.md "Theme Loading" section for the full rules and the themed/never-themed boundary. Key points:
-- Orchestrator voice is MANDATORY — print themed status messages at every step transition
+- Orchestrator voice is MANDATORY — ALL text output between steps uses themed voice, never plain narration ("Let me read the SKILL.md..." is wrong — print the themed moment instead)
 - Artifact headers get themed, artifact content stays plain
 - Crew output is never themed — findings tables, severity, confidence are always parseable
 - The ship speaks themed, the crew speaks plain

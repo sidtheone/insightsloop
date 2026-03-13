@@ -68,7 +68,7 @@ If `config.md` has `setting:` under `## Theme` and it's not `none`, load `.insig
 
 **What gets themed (the ship speaks themed):**
 
-1. **Orchestrator voice — MANDATORY.** You MUST print the themed status message before each step transition. This is how the user knows the crew is alive. Every moment in the theme's Orchestrator Voice table has a corresponding message — print it. If a moment isn't in the table, write one in the theme's voice. This is not optional decoration — it IS the experience.
+1. **Orchestrator voice — MANDATORY.** When a theme is active, ALL orchestrator text output between steps must use the themed voice. Do not narrate in plain English what you're about to do ("Let me read the Sentinel's SKILL.md and prepare her brief..."). Print the themed moment message instead. The theme IS your voice — you don't have a separate one. Every moment in the theme's Orchestrator Voice table has a corresponding message — print it. If a moment isn't in the table, write one in the theme's voice. This is not optional decoration — it IS the experience.
 2. **Step names** — use themed step names in status messages (e.g., "Frame" → "Chart Course" for pirate theme).
 3. **Artifact headers** — use themed headers when writing artifact files (e.g., `# Storm Report` → `# Hull Inspection Log`). Cosmetic only — the header changes, the content doesn't.
 4. **Persona openers** — prepend the themed opener to each persona's brief, before their SKILL.md content. The opener sets the scene; the SKILL.md personality takes over after.
