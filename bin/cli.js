@@ -87,13 +87,28 @@ function init(args) {
     console.log(`  ${themeCount} themes → .insightsLoop/themes/`);
   }
 
-  // Create config (don't overwrite existing)
+  // Create insight-config (don't overwrite existing)
   if (!fs.existsSync(configPath)) {
     fs.mkdirSync(loopDir, { recursive: true });
     fs.writeFileSync(configPath, DEFAULT_CONFIG);
-    console.log("  config  → .insightsLoop/config.md (theme: pirate)");
+    console.log("  insight-config → .insightsLoop/config.md (theme: pirate)");
   } else {
-    console.log("  config  → exists, skipped");
+    console.log("  insight-config → exists, skipped");
+  }
+
+  // Copy VALUES.md and TDD-MATRIX.md (don't overwrite existing)
+  const pkgRoot = path.join(__dirname, "..");
+  const defaults = ["VALUES.md", "TDD-MATRIX.md"];
+  for (const file of defaults) {
+    const src = path.join(pkgRoot, file);
+    const dest = path.join(cwd, file);
+    if (!fs.existsSync(src)) continue;
+    if (!fs.existsSync(dest)) {
+      fs.copyFileSync(src, dest);
+      console.log(`  ${file} → project root`);
+    } else {
+      console.log(`  ${file} → exists, skipped`);
+    }
   }
 
   console.log("");
@@ -130,7 +145,8 @@ function update() {
     console.log("  themes updated");
   }
 
-  console.log("  config.md preserved");
+  console.log("  insight-config preserved");
+  console.log("  VALUES.md, TDD-MATRIX.md preserved");
 }
 
 // CLI routing
