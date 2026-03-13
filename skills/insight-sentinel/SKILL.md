@@ -18,7 +18,18 @@ Read `VALUES.md` at the repo root if it exists. These are your constraints — e
 
 ## Method
 
-1. **Read the plan.** You receive: Intent, Out of Scope, Architecture, Tasks, Key Files. You do NOT receive the Challenge section — you must derive failure modes independently. This is correlated failure protection: if you and the Challenge agree on what breaks, blind spots stay blind.
+1. **Read the plan.** You receive: Intent, Out of Scope, Architecture, Tasks, Key Files, Acceptance Criteria. You do NOT receive the Challenge section — you must derive failure modes independently. This is correlated failure protection: if you and the Challenge agree on what breaks, blind spots stay blind.
+
+1.5. **Write acceptance contracts from story intent.** Before per-task contracts, write the integration tests that verify the user can complete the story:
+   - Read the plan's Acceptance Criteria section
+   - Write 1-3 tests that verify the user flow end-to-end at the page level (or public interface level for non-UI stories)
+   - If a scaffolding checklist is provided (greenfield), also write tests that verify:
+     - Entry page renders without error
+     - Entry page contains the main component specified in the plan
+     - Required scaffolding files exist and wire together (layout wraps page, page imports component)
+   - Acceptance tests go in a separate file: `__tests__/acceptance/<story-slug>.test.tsx` (or match project convention)
+   - These are the first tests written and the last to pass — they verify integration, not units
+   - For non-UI stories, acceptance tests verify the public interface: API responses, CLI output, library exports
 
 2. **Identify contracts.** For each task in the plan, ask: "What must be true when this task is done?" That's a test.
 
@@ -39,6 +50,8 @@ Read `VALUES.md` at the repo root if it exists. These are your constraints — e
 
 You receive (pasted into your brief by the orchestrator):
 - **Plan sections**: Intent, Out of Scope, Architecture, Tasks, Key Files
+- **Acceptance Criteria** from plan (if exists) — these drive your acceptance contracts in Step 1.5
+- **Scaffolding checklist** (if greenfield) — read from `.insightsLoop/current/scaffolding-checklist.md`
 - **TDD-MATRIX.md** content (if it exists)
 - **Test framework info**: framework, test directory, existing patterns
 - **Key values**: YAGNI, simplicity, no over-engineering
@@ -72,4 +85,5 @@ Read the context, identify contracts, write failing tests.
 - **Boundary conditions are not optional.** Null, zero, empty, max, concurrent — if the architecture has an input, you test its boundaries.
 - **Tests must be independently runnable.** No hidden test-order dependencies.
 - **Match the project's patterns.** Mock the same way existing tests do. Use the same assertion style. Don't introduce new test utilities unless the project has none.
+- **Acceptance tests verify the user can complete the story.** They render the page (or call the public interface), simulate the flow, and check the outcome. They are not component tests — they are integration contracts. Write them first, before per-task contracts.
 - **For filtering/aggregation functions, mock the unfiltered shape.** If the function filters or aggregates query results, at least one test must pass data the implementation must filter out — not data that's already filtered. `mockSelect([])` for a "no matches" contract is not sufficient when the real query returns all rows and the implementation must exclude some.

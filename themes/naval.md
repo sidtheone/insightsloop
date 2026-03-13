@@ -51,8 +51,8 @@ Prepend these to each persona's brief. They set the scene — the persona's own 
 | Sentinel done | *Rules of engagement signed. The crew knows the terms.* |
 | Shipwright starts | *Repair crews to stations.* |
 | Shipwright done | *Hull plate secured. She holds.* |
-| Monkey finding (survived) | *The bunny checked the valve. Holding pressure.* |
-| Monkey finding (didn't survive) | *The bunny found a leaking valve.* |
+| Monkey finding (survived) | *The Monkey checked the valve. Holding pressure.* |
+| Monkey finding (didn't survive) | *The Monkey found a leaking valve.* |
 | Storm starts | *Below the waterline. Inspecting every weld.* |
 | Storm done | *Inspection complete. Report filed.* |
 | Cartographer starts | *Charting the minefield ahead.* |

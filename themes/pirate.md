@@ -53,8 +53,8 @@ Status messages the devloop uses between steps. Keep them short — one line, se
 | Sentinel done | *Articles signed. The crew knows the terms.* |
 | Shipwright starts | *Hammers ring in the dry dock.* |
 | Shipwright done | *The mast is raised. She holds.* |
-| Monkey finding (survived) | *The bunny tapped the barrel. Solid.* |
-| Monkey finding (didn't survive) | *The bunny found a hollow barrel.* |
+| Monkey finding (survived) | *The Monkey tapped the barrel. Solid.* |
+| Monkey finding (didn't survive) | *The Monkey found a hollow barrel.* |
 | Storm starts | *Down to the bilge. Pressing every seam.* |
 | Storm done | *Inspection complete. Report on the captain's desk.* |
 | Cartographer starts | *The cartographer maps the reef ahead.* |

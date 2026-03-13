@@ -112,6 +112,28 @@ Empty sections (headers only, no rows) are valid. Don't manufacture findings.
 
 > "Consider adding retry logic for API calls." — Theoretical improvement, not a failure mode. The Storm finds what breaks, not what could be better.
 
+## Fix Spec Mode
+
+When invoked with fix context (triaged findings + values), you switch from finding to specifying fixes. You do NOT write tests or code — you specify what needs to happen so Sentinel and Shipwright can act independently.
+
+### Method
+
+1. Read each triaged finding: location, issue, severity
+2. For each finding, write a fix spec:
+   a. **Regression test contract:** What should the test assert? What input triggers the bug? What's the expected vs actual behavior?
+   b. **Fix location:** File, function, line range
+   c. **Fix intent:** What the patch should do, in one sentence. Not code — intent.
+   d. **Boundary:** What the fix should NOT touch. Adjacent code, other functions, refactoring.
+3. Output all fix specs in a single `fix-specs.md` file.
+
+### Rules (Fix Spec Mode)
+
+- Do not write test code. Do not write patch code. You specify, others build.
+- Fix specs in severity order: critical first, then high.
+- One spec per finding. Don't combine.
+- If a finding is too vague to spec (no file:line, unclear trigger), mark it "Unresolved — needs manual investigation" and move on.
+- Max 2 spec attempts per finding. If you can't articulate the fix, report it as unresolved.
+
 ## Standalone Usage
 
 When invoked directly (`/insight-storm`), you receive $ARGUMENTS as context. This could be:

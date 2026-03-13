@@ -37,7 +37,21 @@ How to brief agents with values:
 - `.claude/skills/insight-shipwright/SKILL.md` — read before Step 2b
 - `.claude/skills/insight-storm/SKILL.md` — read before Step 3b
 
-When briefing agents, paste the relevant SKILL.md content into their brief — do not paraphrase. Paste: the persona description at the top of the file (unlabeled prose before the first `##`), the `## Method` section, and the `## Rules` section. The SKILL.md is the single source of truth for how each crew member operates.
+### Brief Construction Rules
+
+Three rules govern all crew invocations:
+
+1. **Paste SKILL.md verbatim.** The entire file content — not selected sections, not paraphrased. The SKILL.md is the single source of truth for how each crew member operates.
+
+2. **Write context to a brief file.** Instead of inline brief construction, write run-specific context to `.insightsLoop/current/brief-<crew>.md` (or `brief-<crew>-<mode>.md` for multi-mode crew) and add one line to the Agent prompt: "Read `.insightsLoop/current/brief-<crew>.md` for your mission context." This keeps the Agent prompt short (SKILL.md + one read instruction) and the context complete + inspectable.
+
+3. **Present crew output as-is.** When an Agent returns, show its output directly. Do not rewrite, narrate, or summarize in the orchestrator's own voice. The crew speaks for themselves.
+
+**Brief naming convention:**
+- Single-invocation crew: `brief-sentinel.md`, `brief-shipwright.md`, `brief-cartographer.md`
+- Multi-mode crew: `brief-storm-verify.md`, `brief-storm-fixspec.md`
+- Monkey: `brief-monkey.md` — overwritten each step (the template already structures per-step context)
+- All `brief-*.md` files are on the archive **discard list** (ephemeral context, not artifacts)
 
 Also read `.insightsLoop/config.md` for engine tunables if it exists. If it doesn't exist, use these defaults:
 - `monkey_findings_per_step` (default: 1) — how many findings the Monkey produces at each step. If > 1, tell the Monkey: "Produce N findings, each using a different technique. Each finding gets its own Technique/Target/Confidence/Survived block in the output file."
@@ -99,6 +113,10 @@ These survive into the numbered run directory:
 - `plan.md` — intent. Without this, the rest means nothing.
 - `monkey-*.md` — her performance over time is how you tune the system.
 - `storm-report.md` — real issues found.
+- `storm-plan.md` — Storm's plan review findings (if exists).
+- `findings-consolidated.md` — unified view of all findings with final status.
+- `fix-specs.md` — fix contracts (if fix pipeline ran).
+- `scaffolding-checklist.md` — greenfield scaffolding contract (if greenfield).
 - `summary.md` — the manifest of what happened.
 - `mockup.html` — the Helmsman's approved visual design (if it exists). Useful for retro comparison.
 
@@ -106,7 +124,8 @@ These survive into the numbered run directory:
 
 These are deleted when `current/` becomes `run-NNNN/`:
 - `frame.md` — operational, triage is captured in summary.md.
-- `edge-cases.md` — either fixed or covered by storm-report.md.
+- `edge-cases.md` — either fixed or covered by findings-consolidated.md.
+- `brief-*.md` — ephemeral orchestrator context, not artifacts.
 
 ## Prerequisites
 
@@ -121,7 +140,39 @@ This skill expects `plan.md` with a `## Challenge` section. Search order: `$ARGU
 
 ## Step 1: Frame
 
-**Goal**: Read the plan, triage, prepare for build.
+**Goal**: Read the plan, triage, detect greenfield, prepare for build.
+
+### Greenfield Detection
+
+Before triaging, check if the project needs scaffolding:
+
+**Pass 1 — File existence:**
+1. Check if `package.json` (or equivalent: `requirements.txt`, `go.mod`, `Cargo.toml`) exists in project root
+2. Check if framework entry file exists (e.g., `app/layout.tsx` for Next.js, `src/main.tsx` for Vite)
+3. Check if framework config exists (e.g., `next.config.*`, `vite.config.*`, `tailwind.config.*`)
+4. If any core file is missing → greenfield
+
+**Pass 2 — Wiring verification (runs even if Pass 1 finds all files):**
+5. Check that entry file has non-empty content (not just a bare `export default` or empty component)
+6. Check that layout file imports and wraps children (for Next.js: `{children}` in JSX)
+7. Check that CSS entry file contains framework directives (e.g., `@tailwind base` or `@import "tailwindcss"`)
+8. Check that `package.json` has framework as a dependency (e.g., `next`, `react`, `vite`)
+9. If any wiring check fails → partially-scaffolded (treat as greenfield with pre-existing files noted)
+
+**If greenfield or partially-scaffolded:**
+
+Use `AskUserQuestion`: "Detected [greenfield / partially-scaffolded] project. Files already present: [list]. Missing or unwired: [list]. Generate scaffolding checklist? [Approve / Skip / Edit]"
+
+If approved, generate checklist from plan's Architecture section:
+- **Next.js + Tailwind:** app/layout.tsx (must wrap `{children}`, import globals.css), app/page.tsx (must export default component), app/globals.css (must contain Tailwind directives), tailwind.config.ts, postcss.config.js, next.config.ts
+- **Vite + React + Tailwind:** index.html (must reference src/main.tsx), src/main.tsx (must render App into root), src/App.tsx, src/index.css (must contain Tailwind directives), vite.config.ts, tailwind.config.ts, postcss.config.js
+- **Other stacks:** Derive from architecture section. Present to user for confirmation.
+- For partially-scaffolded: mark existing files as "exists — verify wiring" vs missing as "create"
+- Include design tokens from Visual Spec if present
+
+Write checklist to `.insightsLoop/current/scaffolding-checklist.md`. This file is passed to Sentinel via brief and archived with the run (keep-list).
+
+### Triage
 
 Read `plan.md`. Confirm the triage label from the `## Challenge` section:
 
@@ -155,16 +206,25 @@ Present the Monkey's finding to the user alongside the frame. If `Survived: no`,
 
 **The Sentinel** writes tests from the plan. She must be a **separate agent** from the builder.
 
-Read the Sentinel's SKILL.md at `.claude/skills/insight-sentinel/SKILL.md`. Construct her brief by pasting:
-1. Her Identity and Method sections (from SKILL.md)
-2. Her Rules section (from SKILL.md)
-3. The specific context for this run:
-   - Plan.md sections: Intent, Out of Scope, Architecture, Tasks, Key Files (NOT Challenge — correlated failure protection)
-   - TDD-MATRIX.md content (if it exists)
-   - Test framework info (framework, test directory, existing test patterns)
-   - Key values from VALUES.md: YAGNI, simplicity, no over-engineering
+Read the Sentinel's SKILL.md at `.claude/skills/insight-sentinel/SKILL.md`. Paste the entire SKILL.md verbatim into the Agent prompt. Write context to `.insightsLoop/current/brief-sentinel.md`:
 
-She produces: failing test suite, written to the project's test directory.
+```markdown
+# Sentinel Brief
+## Plan
+[full plan sections: Intent, Out of Scope, Architecture, Tasks, Key Files — NOT Challenge]
+## Acceptance Criteria
+[from plan, verbatim]
+## Scaffolding Checklist
+[read from .insightsLoop/current/scaffolding-checklist.md if greenfield, else "Not greenfield — skip"]
+## TDD Matrix
+[TDD-MATRIX.md content if exists, else "None"]
+## Test Framework
+[framework, test directory, existing patterns]
+## Values
+[VALUES.md content if exists, else "None"]
+```
+
+She produces: failing test suite (acceptance contracts first, then per-task contracts), written to the project's test directory.
 
 ### The Monkey at TDD
 
@@ -180,16 +240,23 @@ If `Survived: no` and the finding is specific enough to act on, add the test. If
 
 Launch **Shipwright** agents per the parallelization plan from Frame. Each Shipwright runs in an **isolated worktree** (`isolation: "worktree"`) with clean context.
 
-Read the Shipwright's SKILL.md at `.claude/skills/insight-shipwright/SKILL.md`. Construct each brief by pasting:
-1. The Shipwright's Identity and Method sections (from SKILL.md)
-2. The Rules section (from SKILL.md)
-3. The specific context for this task:
-   - Full plan.md (including Challenge section)
-   - The test files assigned to this Shipwright (from frame.md)
-   - Its specific task scope (which tasks from the plan are theirs)
-   - Key values from VALUES.md: YAGNI, simplicity, "best code is no code", no gold-plating
-   - If Visual Spec exists in plan: paste it verbatim (the Shipwright's SKILL.md defines how to handle it)
-   - If `.insightsLoop/current/mockup.html` exists: tell the Shipwright the path (do NOT paste the HTML contents — it bloats context). The Shipwright reads it directly when needed.
+Read the Shipwright's SKILL.md at `.claude/skills/insight-shipwright/SKILL.md`. Paste the entire SKILL.md verbatim into the Agent prompt. Write context to `.insightsLoop/current/brief-shipwright.md` (one per Shipwright if parallel — use `brief-shipwright-1.md`, `brief-shipwright-2.md`):
+
+```markdown
+# Shipwright Brief
+## Plan
+[full plan.md including Challenge]
+## Test Files
+[list of test file paths assigned to this Shipwright]
+## Task Scope
+[which tasks from the plan are theirs]
+## Values
+[VALUES.md content if exists, else "None"]
+## Visual Spec
+[from plan, verbatim, if exists]
+## Mockup Path
+[path to mockup.html if exists, else "None" — do NOT paste HTML contents]
+```
 
 Independent tasks run in parallel. Dependent tasks run sequentially.
 
@@ -226,12 +293,17 @@ Two agents run in parallel on the merged diff:
 
 **The Storm — Adversarial Review + Consistency (Opus)**:
 
-Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md`. Construct the brief by pasting:
-1. The Storm's Identity, Method (both Pass 1 and Pass 2), and Rules sections (from SKILL.md)
-2. The specific context:
-   - The full merged diff
-   - VALUES.md content (full)
-   - Feature context: 1-2 sentences from plan Intent
+Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md`. Paste the entire SKILL.md verbatim into the Agent prompt. Write context to `.insightsLoop/current/brief-storm-verify.md`:
+
+```markdown
+# Storm Brief (Verify Mode)
+## Diff
+[full merged diff]
+## Values
+[VALUES.md content]
+## Intent
+[1-2 sentences from plan Intent]
+```
 
 The Storm runs both passes in a single invocation — adversarial review first, consistency check second. For small changes (single worktree), tell her to write "Clean — single worktree, no cross-module changes." in the Consistency section.
 
@@ -259,18 +331,90 @@ Output: `.insightsLoop/current/monkey-ship.md`
 
 If `Survived: no` and confidence is high, treat it like a Storm finding and fix it. Present all Monkey findings to the user regardless.
 
-### 3c: Fix
+### 3c: Consolidate + Fix Pipeline
 
-Triage and apply fixes:
-1. Storm critical/high severity issues first
-2. Storm consistency findings (cross-module assumption mismatches before naming)
-3. Cartographer findings that would corrupt data or crash at runtime
-4. Monkey findings where `Survived: no` and confidence is high
-5. Everything else goes to backlog
+**Step 1: Consolidate all findings** into `.insightsLoop/current/findings-consolidated.md`:
 
-When Storm and Cartographer findings reference the same location, present both to the user — don't resolve silently.
+Merge findings from all sources: `monkey-frame.md`, `monkey-tdd.md`, `monkey-build.md`, `monkey-ship.md`, `storm-report.md`, `edge-cases.md`.
 
-Re-run tests after fixes.
+```markdown
+# Consolidated Findings
+
+| # | Source | Phase | Location | Issue | Severity | Status |
+|---|--------|-------|----------|-------|----------|--------|
+| 1 | Storm | Ship | route.ts:33 | API key not checked | Critical | Pending |
+| 2 | Monkey | Build | route.ts:33 | API key not checked | High | Possible dup of #1 |
+| 3 | Cartographer | Ship | IngredientInput:28 | No concurrent search guard | Medium | Backlog |
+| 4 | Monkey | Frame | [concept] caching assumption | Architecture assumes cold start | Medium | Backlog |
+```
+
+**Location column contract:**
+- **Actionable:** `file.ts:33` or `ComponentName:28` — has a file:line reference. Eligible for fix pipeline.
+- **Conceptual:** `[concept] description` — prefixed with `[concept]`. No file:line. Goes straight to Backlog.
+
+**Sort:** Group by severity (Critical → High → Medium → Low), sub-sort by file + line.
+
+**No auto-dedup.** If findings look like duplicates, note "Possible dup of #N" but don't auto-collapse. User confirms.
+
+**Step 2: Triage for fix pipeline.** Filter: `Severity ∈ {Critical, High}` AND Location is actionable (not `[concept]`) AND not `Dup of #N`. Present filtered list to user.
+
+Use `AskUserQuestion`: "Consolidated findings: [N] total, [M] eligible for auto-fix pipeline. [list eligible]. Fix these, skip to backlog, or discuss?" Options: "Fix listed / Skip to backlog / Discuss"
+
+**Step 3: Fix Pipeline (three agents, sequential).**
+
+If user approves fixes:
+
+**3a. Storm Fix Spec Mode.** Read the Storm's SKILL.md. Paste verbatim. Write context to `.insightsLoop/current/brief-storm-fixspec.md`:
+
+```markdown
+# Storm Brief (Fix Spec Mode)
+## Triaged Findings
+[critical/high findings with file:line locations — full Issue text, not truncated]
+## Values
+[VALUES.md content]
+```
+
+Storm writes `.insightsLoop/current/fix-specs.md` — one spec per finding with: regression test contract, fix location, fix intent, boundary (what NOT to touch). She does NOT write code or tests.
+
+**3b. Sentinel writes regression tests.** Read Sentinel SKILL.md. Paste verbatim. Write context to `.insightsLoop/current/brief-sentinel-fix.md`:
+
+```markdown
+# Sentinel Brief (Fix Regression Mode)
+## Fix Specs
+[full fix-specs.md content]
+## Test Framework
+[framework, test directory, existing patterns]
+## Values
+[VALUES.md content]
+```
+
+Sentinel writes one regression test per fix spec. Each test must fail before the fix is applied.
+
+**3c. Shipwright applies patches.** Read Shipwright SKILL.md. Paste verbatim. Write context to `.insightsLoop/current/brief-shipwright-fix.md`:
+
+```markdown
+# Shipwright Brief (Fix Mode)
+## Fix Specs
+[full fix-specs.md content]
+## Failing Tests
+[list of regression test files and their assertions]
+## Values
+[VALUES.md content]
+```
+
+Shipwright applies minimum patches. Runs full test suite. All tests must pass — old and new.
+
+**Step 4: User gate.** "Fix pipeline patched [N] findings. Here's the diff and new tests. Approve?" If tests fail after fixes: stop, present failures to user. Max 2 fix attempts per finding.
+
+**Step 5: Update consolidated report.** Set Status column: Fixed, Unresolved, Backlog, Dup of #N.
+
+Also apply (without the pipeline) any remaining fixes:
+- Storm consistency findings (cross-module assumption mismatches before naming)
+- Cartographer findings that would corrupt data or crash at runtime
+- Monkey findings where `Survived: no` and confidence is high
+- Everything else goes to backlog
+
+Re-run tests after all fixes.
 
 ### 3d: Verify clean
 
@@ -311,8 +455,8 @@ Write `.insightsLoop/current/summary.md`:
 
 Then archive the run:
 1. Determine next run number (look at existing `run-*` dirs)
-2. Keep: `summary.md`, `plan.md`, `monkey-*.md`, `storm-report.md`, `mockup.html` (if exists)
-3. Delete: `frame.md`, `edge-cases.md`
+2. Keep: `summary.md`, `plan.md`, `monkey-*.md`, `storm-report.md`, `storm-plan.md`, `findings-consolidated.md`, `fix-specs.md`, `scaffolding-checklist.md`, `mockup.html` (all if exists)
+3. Delete: `frame.md`, `edge-cases.md`, `brief-*.md`
 4. Rename `.insightsLoop/current/` → `.insightsLoop/run-NNNN-feature-name/`
 
 Present summary to user. Suggest next: run `/insight-retro` to capture learnings.

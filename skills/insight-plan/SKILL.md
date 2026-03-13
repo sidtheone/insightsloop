@@ -152,19 +152,86 @@ If no (pure backend, data pipeline, infrastructure), skip and proceed to archite
 
 **Output**: Chosen architecture with rationale.
 
-## The Monkey at Plan
+## Phase 4b: Acceptance Criteria
 
-Before moving to Challenge, launch The Monkey agent:
+**Goal**: Define "done" in plain English before the Monkey and Storm challenge it.
 
-Brief: "You are The Monkey. Read the plan so far — the story, the architecture, the codebase findings. Read `VALUES.md` if it exists.
+After Tasks are defined, write an `## Acceptance Criteria` section. This is **not** a test plan — it's what the user can do when the story is shipped.
 
-Your arsenal: Assumption Flip, Hostile Input, Existence Question, Scale Shift, Time Travel, Cross-Seam Probe, Requirement Inversion, Delete Probe. Best techniques for Plan: **Assumption Flip, Existence Question, Requirement Inversion**.
+**Format:** 2-4 statements describing observable outcomes:
+```
+## Acceptance Criteria
+1. User lands on `/`, sees ingredient input field ready to type
+2. User adds 3 ingredients, clicks "Find Recipes", sees recipe cards sorted by match count
+3. Feel-good message shows "Saving 3 ingredients from going to waste!"
+4. No results state shows helpful message when no recipes match
+```
 
-Challenge the architecture's core bet. Pick one technique and apply it with specificity — name the file, function, line, scenario. Write your finding using the Monkey output format (Technique, Target, Confidence, Survived, Observation, Consequence)."
+**Rules:**
+- Write from the user's perspective, not the developer's ("User sees X" not "Component renders X")
+- Each criterion must be independently verifiable
+- Cover the happy path + the primary empty/error state
+- For non-UI stories: criteria describe the public interface behavior ("API returns 200 with sorted results" / "CLI outputs formatted table")
+
+**These feed into:**
+- Sentinel: derives acceptance test file from them (ATDD)
+- Monkey: challenges them during plan review
+- Storm: checks for implicit assumptions during plan review
+
+## The Monkey + Storm at Plan
+
+Before moving to Challenge, launch The Monkey and The Storm **in parallel** to stress-test the plan (including Acceptance Criteria).
+
+### Monkey at Plan
+
+Read the Monkey's SKILL.md at `.claude/skills/insight-monkey/SKILL.md`. Paste the entire SKILL.md verbatim into the Agent prompt. Write context to `.insightsLoop/current/brief-monkey.md`:
+
+```markdown
+# Monkey Brief
+## Target
+The complete plan so far — story, architecture, tasks, acceptance criteria, codebase findings.
+## Previous Monkey findings this run
+None — first step.
+## Step
+Plan
+## Recommended Techniques
+Assumption Flip, Existence Question, Requirement Inversion
+## Challenge
+Challenge the architecture's core bet and the acceptance criteria's completeness.
+## Values
+[VALUES.md content if exists, else "None"]
+```
 
 Output: `.insightsLoop/current/monkey-plan.md`
 
-If `Survived: no`, the Navigator needs to rethink. If `Survived: yes`, proceed to Challenge.
+### Storm at Plan (Plan Review Mode)
+
+Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md`. Paste the entire SKILL.md verbatim into the Agent prompt. Write context to `.insightsLoop/current/brief-storm-planreview.md`:
+
+```markdown
+# Storm Brief (Plan Review Mode)
+## Plan
+[full plan.md content so far — Intent through Tasks + Acceptance Criteria]
+## Acceptance Criteria
+[from plan, verbatim]
+## Values
+[VALUES.md content if exists, else "None"]
+```
+
+The Storm reviews the plan for:
+- Assumptions: does Architecture assume things Tasks don't create?
+- Naming consistency: do section references match? (Architecture says "RecipeCard" but Tasks say "RecipeItem"?)
+- Implicit contracts: what's assumed between components that isn't stated?
+- Missing failure modes: what happens when dependencies fail?
+- Acceptance Criteria gaps: do the criteria actually cover the Intent?
+
+Output: `.insightsLoop/current/storm-plan.md`
+
+### After both return
+
+Present both sets of findings to the user. Brief files (`brief-monkey.md`, `brief-storm-planreview.md`) are ephemeral — delete after plan is finalized.
+
+If Monkey `Survived: no` or Storm finds critical/high issues, the Navigator rethinks before proceeding to Challenge. Use `AskUserQuestion`: "Monkey and Storm reviewed the plan. [summary of findings]. Revise the plan or proceed?" Options: "Revise — address findings", "Proceed — findings are acceptable".
 
 ## Phase 5: Challenge
 
@@ -211,6 +278,9 @@ Write to `.insightsLoop/current/plan.md`:
 
 ## Key Files
 [Files to create/modify with descriptions]
+
+## Acceptance Criteria
+[2-4 plain-English statements from Phase 4b — what the user can do when this is done]
 
 ## Visual Spec
 [REQUIRED for stories with UI changes. OMIT for pure backend/logic stories.]

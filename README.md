@@ -1,6 +1,6 @@
-# InsightsLoop (beta 0.7)
+# InsightsLoop (beta 0.8)
 
-An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline. Now with calibrated chaos.
+An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline. Now with structured briefs, greenfield detection, ATDD, and a 3-agent fix pipeline.
 
 ```
 /insight-plan → /insight-devloop (or /insight-devloopfast) → /insight-retro
@@ -39,7 +39,7 @@ Every step has a persona. These aren't decoration — they define how each agent
 | **The Shipwright** | Stonemason — quiet pride, won't touch what isn't his | `/insight-shipwright` | Sonnet |
 | **The Storm** | Hull inspector — presses seams, traces consequences one layer further | `/insight-storm` | Opus |
 | **The Cartographer** | Maps every path, marks every cliff — no personality, no opinions | `/insight-edge-case-hunter` | Sonnet |
-| **The Monkey** | Enthusiastic bunny — pokes assumptions until something wobbles | `/insight-monkey` + every step | Opus |
+| **The Monkey** | Enthusiastic chaos — pokes assumptions until something wobbles | `/insight-monkey` + every step | Opus |
 | **The Helmsman** | Visceral minimalist — "what happens if we remove this?" | `/insight-ux` | Opus |
 | **The Lookout** | Sharp record-keeper — "Burned us:" entries, mistakes first | `/insight-retro` | Sonnet |
 
@@ -47,18 +47,19 @@ Every step has a persona. These aren't decoration — they define how each agent
 
 ### Orchestrators
 
-1. **`/insight-plan`** — The Navigator explores the codebase, asks hard questions, designs architecture, challenges against values. Produces `plan.md` (with Challenge section). Visual Spec section uses explicit MOVE/DELETE/ADD/KEEP instructions — every MOVE implies a DELETE at the source. For UI stories, asks whether to generate a visual HTML mockup (`--mockup` via `/frontend-design`) or keep it structural (ASCII wireframe).
+1. **`/insight-plan`** — The Navigator explores the codebase, asks hard questions, designs architecture, writes Acceptance Criteria, then runs Monkey + Storm in parallel to challenge the plan before it ships. Produces `plan.md` (with Challenge section and Acceptance Criteria). Visual Spec section uses explicit MOVE/DELETE/ADD/KEEP instructions — every MOVE implies a DELETE at the source. For UI stories, asks whether to generate a visual HTML mockup (`--mockup` via `/frontend-design`) or keep it structural (ASCII wireframe).
 
 2. **`/insight-devloop`** — The crew takes the charts and builds:
-   - **Frame**: Triage (small/medium/architectural), parallelization plan
-   - **Build**: The Sentinel writes tests (Opus) → The Shipwright builds (Sonnet, parallel worktrees)
-   - **Ship**: Merge → The Storm + The Cartographer verify in parallel → fix
+   - **Frame**: Greenfield detection (2-pass: existence + wiring), scaffolding checklist, triage, parallelization plan
+   - **Build**: The Sentinel writes acceptance tests first (ATDD), then per-task contracts (Opus) → The Shipwright builds (Sonnet, parallel worktrees)
+   - **Ship**: Merge → The Storm + The Cartographer verify in parallel → consolidated findings report → 3-agent fix pipeline (Storm specs → Sentinel tests → Shipwright patches)
    - **The Monkey**: Launches as a real agent at every step. Structured markdown output. Specific chaos.
-   - **Done**: Write summary, archive run (including `mockup.html` if exists), suggest `/insight-retro`
+   - **Done**: Write summary, archive run (including `mockup.html`, `findings-consolidated.md`, `fix-specs.md` if exists), suggest `/insight-retro`
+   - **Brief construction**: Paste SKILL.md verbatim, write context to brief files, present crew output as-is. No paraphrasing.
    - **Cartographer skip**: Visual-only changes (layout, CSS, copy) skip the Cartographer — Storm carries verification alone.
    - **User Gates**: Every decision point uses `AskUserQuestion` — frame approval, Monkey findings, merge conflicts, post-findings, pre-archive.
 
-3. **`/insight-devloopfast`** — Speed mode. Same crew, same Monkey. Auto-triages small/medium (no approval gate), confidence-filters all findings at 80+ (Storm, Cartographer, and Monkey). Below-threshold findings saved to `filtered-findings.md`, never discarded. The Monkey still launches at every step — she just doesn't block. Same Cartographer skip for visual-only changes. User gates remain for architectural changes, merge conflicts, and pre-archive confirmation.
+3. **`/insight-devloopfast`** — Speed mode. Same crew, same Monkey, same brief construction, same greenfield gate, same ATDD, same 3-agent fix pipeline. Auto-triages small/medium (no approval gate), confidence-filters all findings at 80+ (Storm, Cartographer, and Monkey). Below-threshold findings saved to `filtered-findings.md`, never discarded. The Monkey still launches at every step — she just doesn't block. Same Cartographer skip for visual-only changes. User gates remain for architectural changes, greenfield scaffolding, merge conflicts, and pre-archive confirmation.
 
 ### Standalone Crew Skills
 
@@ -68,7 +69,7 @@ Each crew member can be invoked directly for focused work outside the loop:
 
 5. **`/insight-shipwright`** — Implementation builder. Makes failing tests pass — fast, clean, no wasted wood. Follows Visual Spec as a hard instruction. Receives mockup as visual reference when available. Invokes `/frontend-design` for UI components, constrained by project values. 3 attempts max.
 
-6. **`/insight-storm`** — Adversarial code reviewer + consistency enforcer. Traces inputs, outputs, irreversible decisions, and implicit assumptions. Separates introduced vs pre-existing issues. Handles cross-module naming and assumption consistency in a single pass.
+6. **`/insight-storm`** — Adversarial code reviewer + consistency enforcer. Three modes: Verify (adversarial review + consistency), Plan Review (challenge plan assumptions and acceptance criteria), and Fix Spec (write fix specifications for Sentinel and Shipwright to implement). Traces inputs, outputs, irreversible decisions, and implicit assumptions. Separates introduced vs pre-existing issues.
 
 7. **`/insight-monkey`** — The Monkey, standalone. Point her at a file, a plan, a diff, or a decision. She picks one technique from her arsenal, applies it with specificity, and produces a structured finding. Not a reviewer — a disruptor.
 
@@ -100,7 +101,7 @@ Precedence: VALUES.md > Visual Spec > mockup > existing codebase patterns
 
 ## The Monkey
 
-The Monkey is what makes InsightsLoop different. *poke poke poke.* She's not a checklist. She's not a second reviewer. She's an enthusiastic bunny in a server room — endlessly curious, relentlessly cheerful, pressing every button she can find. A real Opus agent with eight chaos techniques:
+The Monkey is what makes InsightsLoop different. *poke poke poke.* She's not a checklist. She's not a second reviewer. She's the Monkey in the machine — endlessly curious, enthusiastically chaotic, twisting every dial she can find. A real Opus agent with eight chaos techniques:
 
 1. **Assumption Flip** — reverse the strongest assumption, see if it holds
 2. **Hostile Input** — creative inputs nobody considered (not just null)
@@ -122,14 +123,17 @@ Every decision point in the loop uses the `AskUserQuestion` tool — never plain
 | `/insight-plan` | Story selection | Phase 1 |
 | `/insight-plan` | Mockup or ASCII | Phase 4 (UI stories) |
 | `/insight-plan` | Architecture choice | Phase 4 |
+| `/insight-plan` | Monkey + Storm plan review | Phase 5 (new) |
 | `/insight-plan` | Final plan approval | Phase 6 |
 | `/insight-ux` | UX spec review | After 5 sections |
 | `/insight-ux` | Mockup review | After `--mockup` HTML |
+| `/insight-devloop` | Greenfield scaffolding | Step 1 (new) |
 | `/insight-devloop` | Frame approval | Step 1 |
 | `/insight-devloop` | Monkey challenges | Steps 2a, 2b (Survived: no) |
 | `/insight-devloop` | Merge conflicts | Step 3a |
 | `/insight-devloop` | Findings triage | Step 3b |
 | `/insight-devloop` | Ship confirmation | Step 3d |
+| `/insight-devloopfast` | Greenfield scaffolding | Step 1 (new) |
 | `/insight-devloopfast` | Architectural frame only | Step 1 |
 | `/insight-devloopfast` | Triage correction | Monkey says size is wrong |
 | `/insight-devloopfast` | Merge conflicts, findings, ship | Steps 3a, 3b, 3d |
@@ -144,12 +148,16 @@ Every build run is archived in `.insightsLoop/`:
 ├── run-0001-embed-widget/    ← archived
 │   ├── summary.md
 │   ├── plan.md
-│   ├── mockup.html           ← if UI story used --mockup
+│   ├── mockup.html                ← if UI story used --mockup
+│   ├── scaffolding-checklist.md   ← if greenfield
+│   ├── findings-consolidated.md   ← unified findings with status
+│   ├── fix-specs.md               ← fix contracts (if pipeline ran)
+│   ├── storm-report.md
+│   ├── storm-plan.md              ← if Storm reviewed the plan
 │   ├── monkey-frame.md
 │   ├── monkey-tdd.md
 │   ├── monkey-build.md
-│   ├── monkey-ship.md
-│   └── storm-report.md
+│   └── monkey-ship.md
 ├── run-0002-auth-refresh/
 └── ...
 ```
@@ -159,6 +167,9 @@ Runs are named `run-NNNN-feature-name`. The retro reads across runs to spot recu
 ## Design Principles
 
 - **The Sentinel and The Shipwright are never the same agent.** Prevents correlated failure.
+- **The finder never writes the fix.** Storm specs what's wrong, Sentinel writes the regression test, Shipwright patches. Three agents, three perspectives, no blind spots.
+- **Paste SKILL.md verbatim.** Orchestrators never paraphrase, summarize, or select sections. The crew speaks for themselves.
+- **Context goes in brief files.** `.insightsLoop/current/brief-<crew>.md` — inspectable, structured, discarded at archive time.
 - **The Monkey is a real agent, not inline narrative.** Launched with a brief, receives context, returns structured markdown. Opus model.
 - **Each Shipwright works in an isolated worktree.** Clean context per agent.
 - **The Sentinel never reads the Challenge section.** Independent failure mode derivation.
@@ -177,11 +188,15 @@ Runs are named `run-NNNN-feature-name`. The retro reads across runs to spot recu
 ## Artifact Chain
 
 ```
-plan.md → frame.md → test suite → worktrees → storm-report.md + edge-cases.md → shippable diff
-                ↑                        ↑              ↑                    ↑
-          monkey-frame.md      monkey-tdd.md   monkey-build.md     monkey-ship.md
-                                     ↑
-                              mockup.html (optional, from /insight-ux --mockup)
+plan.md → frame.md → test suite → worktrees → storm-report.md + edge-cases.md
+   ↑          ↑            ↑            ↑              ↓
+monkey-plan  greenfield  acceptance   mockup    findings-consolidated.md
+storm-plan   checklist   contracts    (opt)            ↓
+                                              fix-specs.md → regression tests → patches
+                                                             ↓
+                                                      shippable diff
+                                                             ↑
+                                              monkey-frame / tdd / build / ship
 ```
 
 Active run in `.insightsLoop/current/`. Archived to `.insightsLoop/run-NNNN-feature-name/` on completion. Retro reads all of them.
@@ -255,6 +270,19 @@ The Monkey now self-reports verification depth in every finding:
 Every finding must state what was and wasn't verified. "I did NOT verify whether a guard exists upstream" with confidence 55 is more useful than a confident-sounding 90 that's wrong.
 
 **Why this matters:** In a full-codebase audit (EcoTicker, 27 findings), v1 Monkey reported average confidence of 82 with 48% accuracy. After adding calibration, v2 reported average confidence of 69 with ~80% accuracy. The rule doesn't make Monkey smarter — it makes Monkey honest about what it checked.
+
+## Engine Fixes (new in beta 0.8)
+
+Eight changes to fix handover and invocation issues discovered during a real greenfield run:
+
+- **Brief construction**: Orchestrators paste SKILL.md verbatim, write context to brief files, present crew output as-is. No more paraphrasing or narrating.
+- **Greenfield detection**: Two-pass (file existence + wiring verification). Catches partially-scaffolded projects where files exist but don't wire together.
+- **ATDD in Sentinel**: Acceptance tests written first from plan's Acceptance Criteria, before per-task contracts. Scaffolding tests for greenfield.
+- **Acceptance Criteria in Plan**: New section in plan.md — plain-English "done" definition that feeds Sentinel, Monkey, and Storm.
+- **Monkey + Storm review the plan**: Parallel adversarial review at plan time, not just build time. Storm checks for naming mismatches, assumption gaps, and acceptance criteria coverage.
+- **3-agent fix pipeline**: Storm specs what's wrong → Sentinel writes regression tests → Shipwright patches. The finder never writes the fix (breaks correlated failure).
+- **Consolidated findings**: All findings (Monkey x4 steps + Storm + Cartographer) in one table with `[concept]` vs `file:line` location contract.
+- **Monkey identity**: She's the Monkey in the machine now. Enthusiastically chaotic. No more bunny.
 
 ## Documentation
 

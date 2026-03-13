@@ -51,8 +51,8 @@ Prepend these to each persona's brief. They set the scene — the persona's own 
 | Sentinel done | *Protocols locked. The crew knows the acceptance criteria.* |
 | Shipwright starts | *Fabrication bay is hot.* |
 | Shipwright done | *Component fabricated. Seal integrity confirmed.* |
-| Monkey finding (survived) | *The bunny pressed the panel. Cold. Solid.* |
-| Monkey finding (didn't survive) | *The bunny found a warm panel.* |
+| Monkey finding (survived) | *The Monkey pressed the panel. Cold. Solid.* |
+| Monkey finding (didn't survive) | *The Monkey found a warm panel.* |
 | Storm starts | *Crawlspace diagnostics running. Every junction, every seal.* |
 | Storm done | *Diagnostics complete. Report filed to command.* |
 | Cartographer starts | *Mapping the field ahead.* |

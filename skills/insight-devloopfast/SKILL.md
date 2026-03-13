@@ -28,8 +28,13 @@ The Monkey is not ceremony. She's the immune system. She runs at every step as a
 ## What's NOT Different
 
 - Phase 0: Values still load and get pasted into briefs. Non-negotiable.
+- Brief construction: paste SKILL.md verbatim, write context to brief files, present output as-is.
+- Greenfield detection: two-pass (existence + wiring), user gate even in speed mode.
 - The Monkey launches as a real agent at every step. Non-negotiable.
+- Sentinel writes acceptance contracts (ATDD) before per-task contracts.
 - Sentinel is still a separate agent from Shipwright.
+- Fix pipeline: Storm specs → Sentinel tests → Shipwright patches (finder never fixes).
+- Consolidated findings report with `[concept]` location contract.
 - Worktree isolation stays.
 - Plan is still a hard gate. No plan = no build.
 - Tests still run. Code still passes before shipping.
@@ -41,6 +46,15 @@ The Monkey is not ceremony. She's the immune system. She runs at every step as a
 Same as `/insight-devloop` Step 0. Read `VALUES.md` and `TDD-MATRIX.md`. Paste content into agent briefs. If they don't exist, omit values-related lines from briefs. The Monkey reads VALUES.md herself.
 
 Read each crew SKILL.md right before briefing that crew member (same progressive loading as devloop). Same crew, same identities, same methods. Speed mode changes ceremony, not crew definitions.
+
+### Brief Construction Rules
+
+Same three rules as `/insight-devloop`:
+1. **Paste SKILL.md verbatim.** Entire file content — not selected sections, not paraphrased.
+2. **Write context to a brief file.** `.insightsLoop/current/brief-<crew>.md` (or `brief-<crew>-<mode>.md` for multi-mode crew). One read instruction in the Agent prompt.
+3. **Present crew output as-is.** No rewriting, narrating, or summarizing.
+
+Brief naming and discard rules are identical to devloop. All `brief-*.md` files are on the archive discard list.
 
 Also read `.insightsLoop/config.md` for engine tunables if it exists. If it doesn't exist, use these defaults:
 - `monkey_findings_per_step` (default: 1) — if > 1, tell the Monkey to produce N findings per step, each using a different technique
@@ -62,6 +76,16 @@ Same as `/insight-devloop` — all artifacts in `.insightsLoop/current/` during 
 Same as `/insight-devloop` — `plan.md` with `## Challenge` section must exist.
 
 ## Step 1: Frame (Auto-Triage)
+
+### Greenfield Detection
+
+Same two-pass detection as `/insight-devloop`:
+- **Pass 1:** File existence (package.json, entry file, framework config)
+- **Pass 2:** Wiring verification (non-empty content, layout wraps children, CSS has directives, framework in deps)
+
+If greenfield/partially-scaffolded: use `AskUserQuestion` even in speed mode — scaffolding correctness is not auto-approvable. Generate checklist, write to `.insightsLoop/current/scaffolding-checklist.md`. Sentinel receives it in her brief.
+
+### Triage
 
 Read `plan.md`. Determine triage from `## Challenge` section:
 
@@ -92,7 +116,7 @@ Same as `/insight-devloop`. No shortcuts at Build — this is where correctness 
 
 ### 2a: TDD — The Sentinel (Opus)
 
-Same as `/insight-devloop`. Read the Sentinel's SKILL.md and construct her brief per devloop Step 2a.
+Same as `/insight-devloop`. Read the Sentinel's SKILL.md, paste verbatim. Write context to `.insightsLoop/current/brief-sentinel.md` per devloop Step 2a (includes Acceptance Criteria and Scaffolding Checklist if greenfield).
 
 ### The Monkey at TDD
 
@@ -104,7 +128,7 @@ If `Survived: no` and the finding is a concrete test case (not abstract), add th
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
-Same as `/insight-devloop`. Read the Shipwright's SKILL.md and construct each brief per devloop Step 2b.
+Same as `/insight-devloop`. Read the Shipwright's SKILL.md, paste verbatim. Write context to `.insightsLoop/current/brief-shipwright.md` per devloop Step 2b.
 
 ### The Monkey at Build
 
@@ -124,7 +148,7 @@ Same as `/insight-devloop`. Conflicts still stop the loop and go to the user.
 
 Two agents run in parallel:
 
-**The Storm (Opus)**: Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md` and construct the brief per devloop Step 3b. Add one instruction: "For each finding, assign a confidence score (0-100) based on how certain you are this is a real issue, not a theoretical concern. Add a Confidence column to all tables." The Storm handles both adversarial review and consistency in a single pass.
+**The Storm (Opus)**: Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md`, paste verbatim. Write context to `.insightsLoop/current/brief-storm-verify.md` per devloop Step 3b. Add one instruction to the brief: "For each finding, assign a confidence score (0-100) based on how certain you are this is a real issue, not a theoretical concern. Add a Confidence column to all tables." The Storm handles both adversarial review and consistency in a single pass.
 
 **The Cartographer (Sonnet)**: Invoke `/insight-edge-case-hunter` as the actual skill (use the Skill tool, not a general-purpose agent). Add one instruction: "For each finding, add a Confidence column (0-100) based on how certain you are this path is actually reachable and unguarded." Skip condition same as devloop.
 
@@ -158,9 +182,22 @@ Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full a
 
 Her finding goes through the same 80+ confidence filter. No special treatment. She earns attention like everyone else.
 
-### 3c: Fix
+### 3c: Consolidate + Fix Pipeline (Confidence-Filtered)
 
-Fix only 80+ confidence findings that are critical or high severity (including consistency assumption mismatches). Append the rest to `filtered-findings.md`.
+**Step 1: Consolidate all findings** into `.insightsLoop/current/findings-consolidated.md` — same format as devloop (Source, Phase, Location, Issue, Severity, Status columns). Include Confidence column from Storm/Cartographer. Monkey findings use their own confidence scale.
+
+**Location column contract:** Same as devloop — `file.ts:33` for actionable, `[concept]` prefix for conceptual (straight to Backlog).
+
+**Step 2: Filter.** Only findings with confidence 80+ AND severity Critical/High AND actionable location (not `[concept]`) go to the fix pipeline. Everything else → `filtered-findings.md` (below threshold) or Backlog (conceptual/low severity).
+
+**Step 3: Fix pipeline** — same three-agent split as devloop:
+1. **Storm Fix Spec Mode** — paste Storm SKILL.md verbatim, write context to `brief-storm-fixspec.md` with triaged findings
+2. **Sentinel regression tests** — paste Sentinel SKILL.md verbatim, write context to `brief-sentinel-fix.md` with fix specs
+3. **Shipwright patches** — paste Shipwright SKILL.md verbatim, write context to `brief-shipwright-fix.md` with fix specs + failing tests
+
+User gate: "Fix pipeline patched N findings. Approve?" Max 2 attempts per finding.
+
+**Step 4: Update consolidated report** status column. Also apply (without pipeline) any remaining 80+ confidence fixes: consistency assumption mismatches, data-corruption Cartographer findings.
 
 ### 3d: Verify clean
 
@@ -177,7 +214,7 @@ Same as `/insight-devloop` — write `summary.md`, archive the run. One addition
 - Monkey: [X challenges across 4 steps, Y survived, Z didn't]
 ```
 
-**Archive keeps extra files:** `filtered-findings.md` and `mockup.html` (if exists) are preserved in the run directory alongside the standard archive set (summary, plan, monkey-*, storm-report).
+**Archive keeps extra files:** `filtered-findings.md`, `findings-consolidated.md`, `fix-specs.md`, `scaffolding-checklist.md`, `storm-plan.md`, and `mockup.html` (all if exists) are preserved in the run directory alongside the standard archive set (summary, plan, monkey-*, storm-report). Discard: `frame.md`, `edge-cases.md`, `brief-*.md`.
 
 ## Model Assignment
 
