@@ -17,9 +17,9 @@ A 4-step build loop that takes plan artifacts and ships verified code. Each step
 |------|---------|-------|--------|
 | TDD | **The Sentinel** | Opus | Failing test suite |
 | Builder | **The Shipwright** | Sonnet | Passing implementation in worktree |
-| Adversarial + Consistency | **The Storm** | Opus | `storm-report.md` (issues + consistency) |
+| Adversarial + Consistency | **The Storm** | Opus | `storm-report.md`, `storm-tdd.md` |
 | Edge Cases | **The Cartographer** | Sonnet | `edge-cases.md` |
-| Chaos | **The Monkey** | Opus | `monkey-[step].md` per step |
+| Chaos | **The Monkey** | Opus | `monkey-frame.md`, `monkey-build.md` |
 | Retro | **The Lookout** | Sonnet | Crew round + learnings (separate skill) |
 
 ## Step 0: Load Project Values
@@ -34,8 +34,9 @@ How to brief agents with values:
 
 **Crew SKILL.md files** define each crew member's stable identity, method, and rules. Read each crew member's SKILL.md **right before briefing that crew member** — not all upfront. This keeps context fresh and avoids loading instructions you won't need for several steps:
 - `.claude/skills/insight-sentinel/SKILL.md` — read before Step 2a
+- `.claude/skills/insight-storm/SKILL.md` — read before Step 2a (Storm TDD Review)
 - `.claude/skills/insight-shipwright/SKILL.md` — read before Step 2b
-- `.claude/skills/insight-storm/SKILL.md` — read before Step 3b
+- `.claude/skills/insight-storm/SKILL.md` — re-read before Step 3b (Storm Verify)
 
 ### Brief Construction Rules
 
@@ -84,18 +85,16 @@ All build artifacts go in `.insightsLoop/current/` during the active run. Create
 │   ├── plan.md
 │   ├── frame.md
 │   ├── monkey-frame.md
-│   ├── monkey-tdd.md
+│   ├── storm-tdd.md
 │   ├── monkey-build.md
-│   ├── monkey-ship.md
 │   ├── storm-report.md
 │   └── edge-cases.md
 ├── run-0001-embed-widget/    ← completed run (archived)
 │   ├── summary.md
 │   ├── plan.md
 │   ├── monkey-frame.md
-│   ├── monkey-tdd.md
+│   ├── storm-tdd.md
 │   ├── monkey-build.md
-│   ├── monkey-ship.md
 │   └── storm-report.md
 └── run-0002-auth-refresh/
     └── ...
@@ -111,7 +110,8 @@ All build artifacts go in `.insightsLoop/current/` during the active run. Create
 
 These survive into the numbered run directory:
 - `plan.md` — intent. Without this, the rest means nothing.
-- `monkey-*.md` — her performance over time is how you tune the system.
+- `monkey-frame.md`, `monkey-build.md` — her performance over time is how you tune the system.
+- `storm-tdd.md` — test gap analysis.
 - `storm-report.md` — real issues found.
 - `storm-plan.md` — Storm's plan review findings (if exists).
 - `findings-consolidated.md` — unified view of all findings with final status.
@@ -186,19 +186,39 @@ Read `plan.md`. Confirm the triage label from the `## Challenge` section:
 
 Use the `AskUserQuestion` tool to present the frame and get approval. Options: "Approve — start building", "Adjust — change triage or scope", "Abort — back to plan".
 
-### The Monkey at Frame
+### The Monkey at Frame (All Verticals)
 
 Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=frame. Context: plan.md + frame.md.
+
+The Frame Monkey challenges the **plan** across all relevant verticals before any code is written. This is the cheapest place to catch issues — adjusting a plan costs nothing compared to fixing built code.
+
+**Verticals (applied to the plan, not code):**
+
+| Vertical | Lens Against Plan |
+|---|---|
+| **Architecture** | Does the plan introduce unnecessary coupling, over-abstraction, or YAGNI violations? |
+| **Data** | Are queries, indexes, transactions, and data integrity considered? Missing migration steps? |
+| **Security** | Auth gaps in the design? Unvalidated inputs? Secrets exposure? |
+| **Integration** | Cross-module seam assumptions? API contract mismatches? Naming conflicts? |
+| **Operational** | What breaks at 3am with this design? Monitoring gaps? Deploy safety? |
+
+**Vertical selection:** The orchestrator selects relevant verticals based on the plan:
+- Pure UI story → skip Data, Security (unless auth-related)
+- API-only story → skip Operational (unless deployment changes)
+- Always run Architecture and Integration
+- When in doubt, include all 5
+
+Include the selected verticals in the Monkey's brief so she produces one finding per vertical. Each finding gets its own Technique/Target/Confidence/Survived block.
 
 **Dedup with Plan Monkey:** If `.insightsLoop/current/monkey-plan.md` exists (written by the Navigator during `/insight-plan`), read it and include its finding in the "Previous Monkey findings this run" field. The Frame Monkey should not repeat what the Plan Monkey already challenged.
 
 Output: `.insightsLoop/current/monkey-frame.md`
 
-**IMPORTANT: Write `monkey-frame.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
+**IMPORTANT: Write `monkey-frame.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
-Present the Monkey's finding to the user alongside the frame.
+Present the Monkey's findings to the user alongside the frame.
 
-If `Survived: no`, use `AskUserQuestion`: "Monkey challenged the frame: [finding summary]. Re-scope, ignore, or abort?" Options: "Re-scope — adjust frame / Ignore — proceed as planned / Abort — back to plan"
+If any finding has `Survived: no`, use `AskUserQuestion`: "Monkey challenged the frame across [N] verticals: [finding summaries]. Re-scope, ignore, or abort?" Options: "Re-scope — adjust frame / Ignore — proceed as planned / Abort — back to plan"
 
 If re-scope: the orchestrator adjusts the frame (triage label, parallelization plan) — frame.md is orchestrator-owned, not code. No agent needed for frame changes.
 
@@ -230,19 +250,40 @@ Read the Sentinel's SKILL.md at `.claude/skills/insight-sentinel/SKILL.md`. Past
 
 She produces: failing test suite (acceptance contracts first, then per-task contracts), written to the project's test directory.
 
-### The Monkey at TDD
+### Storm — TDD Review (Opus)
 
-Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=tdd. Context: Sentinel's test suite + plan.md.
+After the Sentinel writes tests, the Storm reviews the test contracts for gaps. This is adversarial review of tests — "Did the Sentinel miss a contract? Is the coverage shape wrong? Are acceptance criteria fully covered?"
 
-Output: `.insightsLoop/current/monkey-tdd.md`
+Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md`. Paste the entire SKILL.md verbatim into the Agent prompt. Write context to `.insightsLoop/current/brief-storm-tdd.md`:
 
-**IMPORTANT: Write `monkey-tdd.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
+```markdown
+# Storm Brief (TDD Review Mode)
+## Test Files
+[list of test file paths written by the Sentinel, with key assertions]
+## Plan
+[plan sections: Intent, Architecture, Tasks, Acceptance Criteria]
+## Monkey Frame Findings
+[monkey-frame.md content — what the Monkey already flagged at plan level]
+## Values
+[VALUES.md content]
+## Mission
+Review the Sentinel's test contracts against the plan. Look for:
+- Missing acceptance criteria coverage (plan says X, no test covers X)
+- Wrong abstraction level (testing implementation instead of behavior)
+- Blind spots in edge cases that the plan implies but Sentinel didn't cover
+- Over-testing (tests that duplicate each other or test framework internals)
+Do NOT rewrite the tests. Produce a findings table with: Location, Gap, Severity, Suggestion.
+```
 
-Present the finding to the user.
+Output: `.insightsLoop/current/storm-tdd.md`
 
-If `Survived: no` and the finding is specific enough to act on, use `AskUserQuestion`: "Monkey found a test blind spot: [finding summary]. Add the test?" Options: "Add test / Ignore / Rethink scope"
+**IMPORTANT: Write `storm-tdd.md` immediately** after the Storm agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
-If add test: **dispatch to the Sentinel** — re-invoke her with a brief containing the Monkey's finding and ask her to write the missing contract. The orchestrator does NOT write the test itself. The Sentinel owns all test authorship.
+Present the findings to the user.
+
+If any finding is critical/high (missing acceptance criteria coverage, fundamentally wrong test shape), use `AskUserQuestion`: "Storm found test gaps: [finding summaries]. Add missing contracts?" Options: "Add contracts / Ignore / Rethink scope"
+
+If add contracts: **dispatch to the Sentinel** — re-invoke her with a brief containing Storm's findings and ask her to write the missing contracts. The orchestrator does NOT write tests itself. The Sentinel owns all test authorship.
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
@@ -270,7 +311,7 @@ Independent tasks run in parallel. Dependent tasks run sequentially.
 
 **Output artifact**: Passing implementations in worktrees.
 
-**Note:** The Build Monkey no longer runs here. Monkeys run after Storm + Cartographer in Step 3b, with full analysis context. See "Build Monkeys (parallel verticals)" below.
+**Note:** The Build Monkey runs after Storm + Cartographer in Step 3b, with full analysis context. See "Build Monkey (all verticals)" below.
 
 ## Step 3: Ship
 
@@ -289,7 +330,7 @@ If merge fails, stop and ask the user. Do not silently discard changes.
 
 ### 3b: Verify + Converge
 
-**Three agents run on the merged diff. Storm and Cartographer run in parallel first, then the Ship Monkey runs after both return.**
+**Three agents run on the merged diff. Storm and Cartographer run in parallel first, then the Build Monkey runs after both return.**
 
 #### Storm + Cartographer (parallel)
 
@@ -321,11 +362,11 @@ Output: `.insightsLoop/current/edge-cases.md` — empty report (header only, no 
 
 **IMPORTANT: Write `edge-cases.md` immediately.** When the Cartographer returns, write its findings to `.insightsLoop/current/edge-cases.md` before proceeding. Agent output alone is not persistent.
 
-#### Build Monkeys (parallel verticals — after Storm + Cartographer)
+#### Build Monkey (all verticals — after Storm + Cartographer)
 
-**Do not skip. Do not proceed to convergence without running the Build Monkeys.**
+**Do not skip. Do not proceed to convergence without running the Build Monkey.**
 
-Launch multiple Monkey agents **in parallel**, each attacking a different vertical of the merged code. Every Monkey receives the same shared context (merged diff + storm-report.md + edge-cases.md) but a different lens.
+Launch a single Monkey agent (Opus) that covers all relevant verticals of the merged code in one pass. She receives Storm and Cartographer output as context so she doesn't repeat what they already found.
 
 **Verticals:**
 
@@ -337,14 +378,12 @@ Launch multiple Monkey agents **in parallel**, each attacking a different vertic
 | **Integration** | Cross-module seams, naming mismatches, assumption conflicts between components, API contract drift | Cross-Seam Probe, Assumption Flip, Scale Shift |
 | **Operational** | What breaks at 3am, monitoring gaps, failure recovery, deploy safety, config drift | Time Travel, Scale Shift, Requirement Inversion |
 
-Each Monkey gets a brief:
+Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=build. Context:
 
 ```markdown
-# Monkey Brief (Build — [Vertical])
-## Vertical
-[vertical name] — [lens description]
-## Recommended Techniques
-[from table above]
+# Monkey Brief (Build — All Verticals)
+## Verticals
+[list of selected verticals with lens descriptions from table above]
 ## Merged Diff
 [full merged diff]
 ## Storm Report
@@ -352,16 +391,18 @@ Each Monkey gets a brief:
 ## Edge Cases
 [edge-cases.md content — what Cartographer already found]
 ## Previous Monkey Findings
-[summaries of monkey-frame.md and monkey-tdd.md]
+[monkey-frame.md content]
+## Storm TDD Review
+[storm-tdd.md content — what Storm found in test review]
 ## Values
 [VALUES.md content if exists, else "None"]
 ## Challenge
-Find what Storm and Cartographer MISSED in this vertical. They already covered their ground — your job is to find the gap in their analysis, not repeat it.
+Produce one finding per selected vertical. For each vertical, find what Storm and Cartographer MISSED. They already covered their ground — your job is to find the gap in their analysis, not repeat it. Each finding gets its own Technique/Target/Confidence/Survived block.
 ```
 
-Output: `.insightsLoop/current/monkey-build-arch.md`, `monkey-build-data.md`, `monkey-build-security.md`, `monkey-build-integration.md`, `monkey-build-ops.md`
+Output: `.insightsLoop/current/monkey-build.md`
 
-**IMPORTANT: Write each monkey file immediately** after each agent returns. Agent output alone is not persistent.
+**IMPORTANT: Write `monkey-build.md` immediately** after the Monkey agent returns. Agent output alone is not persistent.
 
 **Vertical selection:** Not all verticals apply to every story. The orchestrator selects relevant verticals based on the plan:
 - Pure UI story → skip Data, Security (unless auth-related)
@@ -369,21 +410,19 @@ Output: `.insightsLoop/current/monkey-build-arch.md`, `monkey-build-data.md`, `m
 - Always run Architecture and Integration
 - When in doubt, run all 5 — the Monkey's `Survived: yes` is a valid answer
 
-**Config:** `monkey_findings_per_step` from config.md applies per vertical. If set to 3, each vertical Monkey produces 3 findings = up to 15 total findings across 5 verticals.
-
-**Monkey findings dispatch:** If any Monkey `Survived: no` with high confidence and actionable file:line, the finding enters the consolidated findings and goes through the fix dispatch matrix. The orchestrator does NOT fix it.
+**Monkey findings dispatch:** If any finding has `Survived: no` with high confidence and actionable file:line, the finding enters the consolidated findings and goes through the fix dispatch matrix. The orchestrator does NOT fix it.
 
 #### Converge and Present
 
 **This is a hard gate. Do not proceed to 3c without completing this.**
 
-After all agents return (Storm, Cartographer, all Build Monkeys) and their artifacts are written to disk:
+After all agents return (Storm, Cartographer, Build Monkey) and their artifacts are written to disk:
 
 1. Present a summary of ALL findings to the user:
    - Storm: [N] introduced issues ([severity breakdown]), [N] consistency findings
    - Cartographer: [N] edge cases (or "skipped — visual only")
-   - Build Monkeys: [N] findings across [M] verticals, [X] survived, [Y] didn't
-2. Use `AskUserQuestion`: "Verify step complete. Storm: [N] issues. Cartographer: [N] edge cases. Monkeys: [N] findings across [M] verticals. Proceed to consolidate and fix?" Options: "Proceed to fix pipeline / Discuss findings first / Stop — need to rethink"
+   - Build Monkey: [N] findings across [M] verticals, [X] survived, [Y] didn't
+2. Use `AskUserQuestion`: "Verify step complete. Storm: [N] issues. Cartographer: [N] edge cases. Monkey: [N] findings across [M] verticals. Proceed to consolidate and fix?" Options: "Proceed to fix pipeline / Discuss findings first / Stop — need to rethink"
 
 **Why this gate exists:** Without it, the orchestrator runs all agents and silently moves into the fix pipeline. The user never sees the findings before fixes start. This gate ensures the crew's analysis is visible and the user can redirect before auto-fixing begins.
 
@@ -391,7 +430,7 @@ After all agents return (Storm, Cartographer, all Build Monkeys) and their artif
 
 **Step 1: Consolidate all findings** into `.insightsLoop/current/findings-consolidated.md`:
 
-Merge findings from all sources: `monkey-frame.md`, `monkey-tdd.md`, `monkey-build.md`, `monkey-ship.md`, `storm-report.md`, `edge-cases.md`.
+Merge findings from all sources: `monkey-frame.md`, `storm-tdd.md`, `monkey-build.md`, `storm-report.md`, `edge-cases.md`.
 
 ```markdown
 # Consolidated Findings
@@ -416,16 +455,18 @@ Merge findings from all sources: `monkey-frame.md`, `monkey-tdd.md`, `monkey-bui
 
 Use `AskUserQuestion`: "Consolidated findings: [N] total, [M] actionable. Triage: [N] for full pipeline, [N] for Shipwright-direct. Fix these, skip to backlog, or discuss?" Options: "Fix listed / Skip to backlog / Discuss"
 
-### Monkey Findings Dispatch Matrix
+### Findings Dispatch Matrix (Monkey + Storm TDD)
 
-The Monkey runs at every step. When she finds something (`Survived: no`), the right crew member handles it — not the orchestrator.
+When Monkey or Storm TDD finds something, the right crew member handles it — not the orchestrator.
 
-| Monkey Step | Finding Type | Dispatched To | What They Do |
-|---|---|---|---|
-| Frame | Scope/triage challenge | Orchestrator (frame.md is not code) | Adjust triage label or parallelization plan |
-| TDD | Test blind spot | **Sentinel** (re-invoke) | Write the missing test contract |
-| Build (5 verticals) | Any finding with file:line | Enters consolidated findings | Goes through fix dispatch matrix below |
-| Build (5 verticals) | Conceptual finding | Backlog | Logged, not auto-fixed |
+| Source | Step | Finding Type | Dispatched To | What They Do |
+|---|---|---|---|---|
+| Monkey | Frame | Scope/triage challenge | Orchestrator (frame.md is not code) | Adjust triage label or parallelization plan |
+| Monkey | Frame | Conceptual finding | Backlog | Logged in monkey-frame.md, not auto-fixed |
+| Storm | TDD | Missing test contract | **Sentinel** (re-invoke) | Write the missing contract |
+| Storm | TDD | Over-testing / wrong abstraction | User decides | Remove or restructure tests |
+| Monkey | Build | Any finding with file:line | Enters consolidated findings | Goes through fix dispatch matrix below |
+| Monkey | Build | Conceptual finding | Backlog | Logged, not auto-fixed |
 
 ### Fix Dispatch Matrix
 
@@ -542,9 +583,11 @@ Write `.insightsLoop/current/summary.md`:
 - After: [count]
 
 ## Findings
-- Storm: [X critical, Y high, Z medium, W low]
+- Storm Verify: [X critical, Y high, Z medium, W low]
+- Storm TDD: [X test gaps found]
 - Cartographer: [X findings]
-- Monkey: [X challenges, Y survived, Z didn't]
+- Monkey (Frame): [X findings across Y verticals, Z survived]
+- Monkey (Build): [X findings across Y verticals, Z survived]
 
 ## Decisions
 [Any decisions made during the build]
@@ -552,7 +595,7 @@ Write `.insightsLoop/current/summary.md`:
 
 Then archive the run:
 1. Determine next run number (look at existing `run-*` dirs)
-2. Keep: `summary.md`, `plan.md`, `monkey-*.md`, `storm-report.md`, `storm-plan.md`, `findings-consolidated.md`, `fix-specs.md`, `scaffolding-checklist.md`, `mockup.html` (all if exists)
+2. Keep: `summary.md`, `plan.md`, `monkey-frame.md`, `monkey-build.md`, `storm-tdd.md`, `storm-report.md`, `storm-plan.md`, `findings-consolidated.md`, `fix-specs.md`, `scaffolding-checklist.md`, `mockup.html` (all if exists)
 3. Delete: `frame.md`, `edge-cases.md`, `brief-*.md`
 4. Rename `.insightsLoop/current/` → `.insightsLoop/run-NNNN-feature-name/`
 
@@ -564,7 +607,7 @@ When things go wrong:
 - **Sentinel writes tests that can't compile**: Stop. Present the error to the user. The plan might be ambiguous — loop back to clarifying the plan, not to forcing the tests.
 - **Shipwright can't make tests pass after 3 attempts**: Stop the worktree. Present the failing tests and the Shipwright's last attempt to the user. The test or the plan might be wrong.
 - **Merge conflict**: Never auto-resolve. Present both versions to the user. They decide which survives.
-- **Tests pass in worktrees but fail after merge**: This is an integration bug. Present the failure. Check Monkey at Build findings — she might have already caught the seam.
+- **Tests pass in worktrees but fail after merge**: This is an integration bug. Present the failure. Check Monkey Frame findings (integration vertical) — she might have already flagged the seam at plan level.
 - **Typecheck fails after all tests pass**: Present the type errors. These are usually naming mismatches between worktrees — check Storm's Consistency section in storm-report.md.
 - **Tests fail after Step 3c fixes**: The fix broke something — this is a regression, not the original issue. Present both the original Storm/Cartographer finding and the newly failing test to the user. Do not retry the fix. Do not revert silently. The user decides: fix the regression, revert the fix and backlog the finding, or take a different approach.
 
@@ -587,10 +630,10 @@ Every decision point that requires user input MUST use the `AskUserQuestion` too
 | When | Gate | Options |
 |------|------|---------|
 | Step 1: Frame | Approve triage and parallelization plan | Approve / Adjust / Abort |
-| Step 2a: Monkey `Survived: no` | Monkey challenged the tests — user decides | Add test / Ignore / Rethink |
-| Step 2b: Monkey `Survived: no` | Monkey challenged the build — user decides before merge | Investigate / Proceed / Stop |
+| Step 1: Monkey `Survived: no` | Monkey challenged the plan across verticals | Re-scope / Ignore / Abort |
+| Step 2a: Storm TDD critical/high | Storm found test gaps — user decides | Add contracts / Ignore / Rethink |
 | Step 3a: Merge conflict | Files overlap between worktrees | Show both versions, user picks |
-| Step 3b: Converge (after Storm + Cartographer + Ship Monkey) | Present all findings before fix pipeline | Proceed to fix pipeline / Discuss findings first / Stop |
+| Step 3b: Converge (after Storm + Cartographer + Build Monkey) | Present all findings before fix pipeline | Proceed to fix pipeline / Discuss findings first / Stop |
 | Step 3d: After fixes + verify clean | Confirm shippable before archive | Ship / Fix more / Abort |
 
 ## Rules

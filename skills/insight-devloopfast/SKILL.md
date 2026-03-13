@@ -13,14 +13,14 @@ Same crew, same values, same Monkey, less ceremony. This is `/insight-devloop` w
 1. **Auto-triage** — Frame runs but doesn't wait for approval on small/medium changes. Only architectural changes gate on human approval.
 2. **Confidence filtering** — Storm, Cartographer, and Monkey findings filtered at 80+ confidence. Below that, logged to `.insightsLoop/current/filtered-findings.md` (never discarded — just not in your face).
 
-The Monkey is not ceremony. She's the immune system. She runs at every step as a real agent with structured output. The only difference from `/insight-devloop`: she doesn't block the loop. She produces her finding, it gets confidence-filtered like everything else, and the crew keeps moving.
+The Monkey runs at Frame (all verticals against the plan) and Build (all verticals against the merged diff). Storm handles TDD review. The only difference from `/insight-devloop`: findings don't block the loop — they get confidence-filtered like everything else, and the crew keeps moving.
 
 ## What's Different from /insight-devloop
 
 | Aspect | /insight-devloop | /insight-devloopfast |
 |--------|----------|--------------|
 | Frame approval | Always waits | Auto-approves small/medium, gates architectural |
-| Monkey | Real agent, blocks on `Survived: no` | Real agent, logs finding, moves on |
+| Monkey | Real agent at Frame + Build, blocks on `Survived: no` | Real agent at Frame + Build, logs finding, moves on |
 | Storm output | All findings | 80+ confidence only |
 | Cartographer output | All findings | 80+ confidence only |
 | Filtered findings | N/A | `filtered-findings.md` |
@@ -30,7 +30,7 @@ The Monkey is not ceremony. She's the immune system. She runs at every step as a
 - Phase 0: Values still load and get pasted into briefs. Non-negotiable.
 - Brief construction: paste SKILL.md verbatim, write context to brief files, present output as-is.
 - Greenfield detection: two-pass (existence + wiring), user gate even in speed mode.
-- The Monkey launches as a real agent at every step. Non-negotiable.
+- The Monkey launches at Frame and Build. Storm reviews TDD. Non-negotiable.
 - Sentinel writes acceptance contracts (ATDD) before per-task contracts.
 - Sentinel is still a separate agent from Shipwright.
 - Fix pipeline: Storm specs → Sentinel tests → Shipwright patches (finder never fixes).
@@ -100,13 +100,15 @@ Write `.insightsLoop/current/frame.md` with triage label and task parallelizatio
 For small/medium: log the triage decision and proceed immediately.
 For architectural: use the `AskUserQuestion` tool to present the frame and get approval. Options: "Approve — start building", "Adjust — change triage or scope", "Abort — back to plan".
 
-### The Monkey at Frame
+### The Monkey at Frame (All Verticals)
 
-Launch the Monkey agent. Same brief as `/insight-devloop`. She produces `.insightsLoop/current/monkey-frame.md`.
+Launch the Monkey agent. Same brief as `/insight-devloop` — covers all relevant verticals against the plan (Architecture, Data, Security, Integration, Operational). One finding per selected vertical. See devloop for vertical selection rules and brief template.
 
-**IMPORTANT: Write `monkey-frame.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
+Output: `.insightsLoop/current/monkey-frame.md`
 
-If `Survived: no`:
+**IMPORTANT: Write `monkey-frame.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
+
+If any finding has `Survived: no`:
 - For architectural: stop and discuss (same as /insight-devloop)
 - For small/medium: if the finding would change the triage, re-triage even in speed mode (triage correctness is not optional). Otherwise log to `filtered-findings.md` and proceed.
 
@@ -118,19 +120,21 @@ Same as `/insight-devloop`. No shortcuts at Build — this is where correctness 
 
 Same as `/insight-devloop`. Read the Sentinel's SKILL.md, paste verbatim. Write context to `.insightsLoop/current/brief-sentinel.md` per devloop Step 2a (includes Acceptance Criteria and Scaffolding Checklist if greenfield).
 
-### The Monkey at TDD
+### Storm — TDD Review (Opus)
 
-Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal (Assumption Flip, Hostile Input, Existence Question, Scale Shift, Time Travel, Cross-Seam Probe, Requirement Inversion, Delete Probe), step-specific technique recommendations, and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-tdd.md`.
+Same as `/insight-devloop` — Storm reviews the Sentinel's test contracts for gaps. Read Storm SKILL.md, paste verbatim, write context to `.insightsLoop/current/brief-storm-tdd.md` per devloop Step 2a.
 
-**IMPORTANT: Write `monkey-tdd.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
+Output: `.insightsLoop/current/storm-tdd.md`
 
-If `Survived: no` and the finding is a concrete test case (not abstract): **dispatch to the Sentinel** — re-invoke her to write the missing contract. The orchestrator does NOT write the test itself. If abstract or low confidence, log to `filtered-findings.md`. In speed mode, Sentinel dispatch happens without a user gate — the test gets added automatically.
+**IMPORTANT: Write `storm-tdd.md` immediately** after the Storm agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
+
+If any finding is critical/high (missing acceptance criteria coverage): **dispatch to the Sentinel** — re-invoke her to write the missing contracts. In speed mode, Sentinel dispatch happens without a user gate — the contracts get added automatically. Lower-severity findings log to `filtered-findings.md`.
 
 ### 2b: Implement — The Shipwright (Sonnet, parallel worktrees)
 
 Same as `/insight-devloop`. Read the Shipwright's SKILL.md, paste verbatim. Write context to `.insightsLoop/current/brief-shipwright.md` per devloop Step 2b.
 
-**Note:** Build Monkeys no longer run here. They run after Storm + Cartographer in Step 3b as parallel verticals. See below.
+**Note:** The Build Monkey runs after Storm + Cartographer in Step 3b, with full analysis context. See "Build Monkey (all verticals)" below.
 
 ## Step 3: Ship (Filtered)
 
@@ -140,7 +144,7 @@ Same as `/insight-devloop`. Conflicts still stop the loop and go to the user.
 
 ### 3b: Verify + Converge (confidence-filtered)
 
-**Three agents run on the merged diff. Storm and Cartographer run in parallel first, then the Ship Monkey runs after both return. Then converge and present.**
+**Three agents run on the merged diff. Storm and Cartographer run in parallel first, then the Build Monkey runs after both return. Then converge and present.**
 
 #### Storm + Cartographer (parallel)
 
@@ -170,13 +174,13 @@ Cartographer output: `.insightsLoop/current/edge-cases.md` — same format with 
 - Empty reports remain valid
 - Borderline (threshold-5 to threshold-1): round up, show it. Better to over-surface than to miss.
 
-#### Build Monkeys (parallel verticals — after Storm + Cartographer)
+#### Build Monkey (all verticals — after Storm + Cartographer)
 
-Same as `/insight-devloop` — multiple Monkeys in parallel, each attacking a different vertical (Architecture, Data, Security, Integration, Operational). Each receives: merged diff + storm-report + edge-cases + vertical-specific lens.
+Same as `/insight-devloop` — single Monkey covers all relevant verticals (Architecture, Data, Security, Integration, Operational) in one pass. Receives: merged diff + storm-report + edge-cases + all vertical lenses.
 
-Output: `monkey-build-arch.md`, `monkey-build-data.md`, `monkey-build-security.md`, `monkey-build-integration.md`, `monkey-build-ops.md`
+Output: `.insightsLoop/current/monkey-build.md`
 
-**IMPORTANT: Write each monkey file immediately** after each agent returns.
+**IMPORTANT: Write `monkey-build.md` immediately** after the Monkey agent returns.
 
 **Vertical selection:** Same as devloop — skip irrelevant verticals based on plan. Always run Architecture and Integration.
 
@@ -186,13 +190,13 @@ Output: `monkey-build-arch.md`, `monkey-build-data.md`, `monkey-build-security.m
 
 **This is a hard gate even in speed mode. Do not proceed to 3c without completing this.**
 
-After all agents return (Storm, Cartographer, all Build Monkeys) and their artifacts are written to disk:
+After all agents return (Storm, Cartographer, Build Monkey) and their artifacts are written to disk:
 
 1. Apply confidence filtering: 80+ findings surfaced, below-threshold → `filtered-findings.md`
 2. Present a summary of ALL surfaced findings to the user:
    - Storm: [N] findings above threshold ([severity breakdown])
    - Cartographer: [N] findings above threshold (or "skipped — visual only")
-   - Build Monkeys: [N] findings across [M] verticals, [X] surfaced, [Y] filtered
+   - Build Monkey: [N] findings across [M] verticals, [X] surfaced, [Y] filtered
    - Filtered: [N] total findings sent to filtered-findings.md
 3. Use `AskUserQuestion`: "Verify step complete. [N] findings surfaced, [M] filtered. Proceed to consolidate and fix?" Options: "Proceed to fix pipeline / Discuss findings first / Stop — need to rethink"
 
@@ -204,16 +208,18 @@ After all agents return (Storm, Cartographer, all Build Monkeys) and their artif
 
 **Step 2: Triage using the fix dispatch matrix (same as devloop).** Additional filter for speed mode: only 80+ confidence findings enter the pipeline. Below-threshold → `filtered-findings.md`.
 
-### Monkey Findings Dispatch Matrix
+### Findings Dispatch Matrix (Monkey + Storm TDD)
 
-Same as devloop — Monkey findings are dispatched to the right crew member, not handled by the orchestrator. In speed mode, TDD dispatch (Sentinel) skips the user gate.
+Same as devloop — findings are dispatched to the right crew member, not handled by the orchestrator. In speed mode, Storm TDD dispatch (Sentinel) skips the user gate.
 
-| Monkey Step | Finding Type | Dispatched To | Speed Mode Behavior |
-|---|---|---|---|
-| Frame | Scope/triage challenge | Orchestrator (frame.md is not code) | Auto if doesn't change triage, gate if it does |
-| TDD | Test blind spot | **Sentinel** (re-invoke) | Auto-dispatch, no user gate |
-| Build (5 verticals) | Any finding with file:line, 80+ confidence | Enters consolidated findings | Goes through fix dispatch matrix below |
-| Build (5 verticals) | Below 80 confidence or conceptual | `filtered-findings.md` / Backlog | Logged, not auto-fixed |
+| Source | Step | Finding Type | Dispatched To | Speed Mode Behavior |
+|---|---|---|---|---|
+| Monkey | Frame | Scope/triage challenge | Orchestrator (frame.md is not code) | Auto if doesn't change triage, gate if it does |
+| Monkey | Frame | Conceptual finding | Backlog | Logged in monkey-frame.md |
+| Storm | TDD | Missing test contract | **Sentinel** (re-invoke) | Auto-dispatch, no user gate |
+| Storm | TDD | Over-testing / wrong abstraction | `filtered-findings.md` | Logged, not auto-fixed in speed mode |
+| Monkey | Build | Any finding with file:line, 80+ confidence | Enters consolidated findings | Goes through fix dispatch matrix below |
+| Monkey | Build | Below 80 confidence or conceptual | `filtered-findings.md` / Backlog | Logged, not auto-fixed |
 
 ### Fix Dispatch Matrix
 
@@ -257,10 +263,11 @@ Same as `/insight-devloop` — write `summary.md`, archive the run. One addition
 ## Filtering
 - Surfaced: [X findings]
 - Filtered: [Y findings → filtered-findings.md]
-- Monkey: [X challenges across 4 steps, Y survived, Z didn't]
+- Monkey: [X challenges across 2 steps (Frame + Build), Y survived, Z didn't]
+- Storm TDD: [X test gaps found]
 ```
 
-**Archive keeps extra files:** `filtered-findings.md`, `findings-consolidated.md`, `fix-specs.md`, `scaffolding-checklist.md`, `storm-plan.md`, and `mockup.html` (all if exists) are preserved in the run directory alongside the standard archive set (summary, plan, monkey-*, storm-report). Discard: `frame.md`, `edge-cases.md`, `brief-*.md`.
+**Archive keeps extra files:** `filtered-findings.md`, `findings-consolidated.md`, `fix-specs.md`, `scaffolding-checklist.md`, `storm-plan.md`, `storm-tdd.md`, and `mockup.html` (all if exists) are preserved in the run directory alongside the standard archive set (summary, plan, monkey-frame, monkey-build, storm-report). Discard: `frame.md`, `edge-cases.md`, `brief-*.md`.
 
 ## Model Assignment
 
@@ -279,18 +286,19 @@ Speed mode reduces gates but doesn't eliminate them. The ones that remain are no
 | Step 1: Frame (architectural only) | Approve triage and scope | Approve / Adjust / Abort |
 | Step 1: Monkey would change triage | Monkey says the size is wrong | Re-triage / Override / Abort |
 | Step 3a: Merge conflict | Files overlap between worktrees | Show both versions, user picks |
-| Step 3b: Converge (after Storm + Cartographer + Ship Monkey) | Present all surfaced findings before fix pipeline | Proceed to fix pipeline / Discuss findings first / Stop |
+| Step 3b: Converge (after Storm + Cartographer + Build Monkey) | Present all surfaced findings before fix pipeline | Proceed to fix pipeline / Discuss findings first / Stop |
 | Step 3d: After fixes + verify clean | Confirm shippable before archive | Ship / Fix more / Abort |
 
 **Not gated in speed mode** (auto-proceed, logged):
 - Frame approval for small/medium (auto-approved, logged)
 - Monkey `Survived: no` below confidence threshold (logged to filtered-findings.md)
+- Storm TDD findings below critical/high (auto-dispatch to Sentinel or logged)
 
 ## Rules
 
 - **Every user gate uses `AskUserQuestion`.** This is how the user knows you need them. No exceptions. If you're waiting for input, use the tool.
-- **The Monkey never sleeps.** She launches as a real agent at every step. Speed mode changes whether she blocks, not whether she exists.
-- **Monkey findings use the same filter.** 80+ confidence or it goes to filtered-findings.md. She earns attention the same way the Storm does.
+- **The Monkey runs at Frame and Build.** Storm handles TDD review. Each agent at its strength.
+- **Monkey and Storm TDD findings use the same filter.** 80+ confidence or it goes to filtered-findings.md.
 - **One exception: triage correction.** If the Monkey's Frame finding would change the triage size, act on it even if confidence is below 80. Getting the triage wrong cascades through every step.
 - **Sentinel and Shipwright are never the same agent.**
 - **The orchestrator NEVER writes code.** Not one line. Not a rename. Not a "quick fix." All code changes go through crew agents via the fix dispatch matrix. The orchestrator triages, dispatches, and presents — it does not edit files.

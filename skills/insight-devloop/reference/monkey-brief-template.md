@@ -10,7 +10,7 @@ Your arsenal: Assumption Flip, Hostile Input, Existence Question, Scale Shift, T
 
 Previous Monkey findings this run: [PREVIOUS_FINDINGS_SUMMARY]. Pick a different target from all previous findings.
 
-[STEP_SPECIFIC_CHALLENGE]. Pick one technique and apply it with specificity — name the file, function, line, scenario. Write your finding using the Monkey output format (Technique, Target, Confidence, Survived, Observation, Consequence)."
+[STEP_SPECIFIC_CHALLENGE]. Write your findings using the Monkey output format (Technique, Target, Confidence, Survived, Observation, Consequence). Produce one finding per selected vertical."
 
 ---
 
@@ -18,19 +18,30 @@ Previous Monkey findings this run: [PREVIOUS_FINDINGS_SUMMARY]. Pick a different
 
 | Step | CONTEXT_DESCRIPTION | RECOMMENDED_TECHNIQUES | STEP_SPECIFIC_CHALLENGE |
 |------|---------------------|------------------------|-------------------------|
-| frame | the plan and the frame | Assumption Flip, Scale Shift, Existence Question | Challenge the triage decision or scope boundaries |
-| tdd | the test suite the Sentinel just wrote and the plan | Hostile Input, Requirement Inversion, Delete Probe | Find the test suite's blind spot |
+| frame | the plan and the frame | Assumption Flip, Scale Shift, Existence Question, Cross-Seam Probe | Challenge the plan across all selected verticals (Architecture, Data, Security, Integration, Operational). One finding per vertical. |
+| build | the merged diff, storm-report.md, edge-cases.md, and storm-tdd.md | All techniques — match to vertical | Find what Storm and Cartographer MISSED across all selected verticals. One finding per vertical. |
 
-**Build step uses vertical briefs instead of this template.** See devloop SKILL.md Step 3b "Build Monkeys (parallel verticals)" for the vertical-specific brief format. Each vertical Monkey gets: merged diff + storm-report + edge-cases + its own lens and recommended techniques.
+## Verticals Reference
+
+Include selected verticals in the brief so the Monkey knows which lenses to apply:
+
+| Vertical | Lens | Best Techniques |
+|---|---|---|
+| **Architecture** | Coupling, abstractions, dependency direction, YAGNI violations | Existence Question, Assumption Flip, Delete Probe |
+| **Data** | Queries, N+1, missing indexes, partial state, transactions | Scale Shift, Time Travel, Hostile Input |
+| **Security** | Auth gaps, injection, validation, secrets, privilege escalation | Hostile Input, Assumption Flip, Requirement Inversion |
+| **Integration** | Cross-module seams, naming, assumption conflicts, API drift | Cross-Seam Probe, Assumption Flip, Scale Shift |
+| **Operational** | 3am failures, monitoring, recovery, deploy safety | Time Travel, Scale Shift, Requirement Inversion |
+
+**Vertical selection:** Not all verticals apply. Skip irrelevant ones based on the plan. Always include Architecture and Integration.
 
 ## Previous Findings Accumulation
 
 - frame: "None — first step."
-- tdd: "[1-line summary of monkey-frame.md finding]"
-- build verticals: "[1-line summary of monkey-frame.md and monkey-tdd.md findings]" (shared across all verticals)
+- build: "[summaries of monkey-frame.md findings + storm-tdd.md findings]"
 
 ## Output
 
 Each step writes to: `.insightsLoop/current/monkey-[step].md`
 
-**IMPORTANT: Write the monkey file immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
+**IMPORTANT: Write the monkey file immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
