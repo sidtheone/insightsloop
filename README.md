@@ -22,11 +22,11 @@ This works better for three reasons:
 
 ## Values
 
-InsightsLoop doesn't ship with values — your project does. Create a `VALUES.md` at your repo root using [AssertValues](https://assertvalues.dev/) or by hand. Every skill loads it before execution. Every agent enforces it. The Monkey uses your values offensively — she catches the crew not following them.
+InsightsLoop ships with default engineering, UX, and security values in [`VALUES.md`](VALUES.md). Every skill loads them before execution. Every agent enforces them. The Monkey uses your values offensively — she catches the crew not following them.
+
+Your project should add its own **Product Values** — the principles that define what your product cares about. Override or extend the defaults by creating a `VALUES.md` at your project's repo root using [AssertValues](https://assertvalues.dev/) or by hand. Project values take precedence over engine defaults.
 
 Optionally add `TDD-MATRIX.md` to define when to test first vs. after — the Sentinel loads it as a gate.
-
-No values file? The engine still works. It just can't push back on decisions that violate principles you haven't written down.
 
 ## The Crew
 
