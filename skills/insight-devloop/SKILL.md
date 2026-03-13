@@ -370,11 +370,35 @@ Merge findings from all sources: `monkey-frame.md`, `monkey-tdd.md`, `monkey-bui
 
 **No auto-dedup.** If findings look like duplicates, note "Possible dup of #N" but don't auto-collapse. User confirms.
 
-**Step 2: Triage for fix pipeline.** Filter: `Severity ∈ {Critical, High}` AND Location is actionable (not `[concept]`) AND not `Dup of #N`. Present filtered list to user.
+**Step 2: Triage all actionable findings.** Using the fix dispatch matrix below, assign each actionable finding to the correct fix route. Present the triage to the user.
 
-Use `AskUserQuestion`: "Consolidated findings: [N] total, [M] eligible for auto-fix pipeline. [list eligible]. Fix these, skip to backlog, or discuss?" Options: "Fix listed / Skip to backlog / Discuss"
+Use `AskUserQuestion`: "Consolidated findings: [N] total, [M] actionable. Triage: [N] for full pipeline, [N] for Shipwright-direct. Fix these, skip to backlog, or discuss?" Options: "Fix listed / Skip to backlog / Discuss"
 
-**Step 3: Fix Pipeline (three agents, sequential).**
+### Fix Dispatch Matrix
+
+**The orchestrator NEVER writes, edits, or patches code. Not one line. Not even a rename. All fixes go through crew agents.**
+
+| Finding Type | Route | Who Specs | Who Tests | Who Fixes |
+|---|---|---|---|---|
+| Storm critical/high (has file:line) | Full pipeline | Storm (Fix Spec) | Sentinel (regression test) | Shipwright (patch) |
+| Storm consistency — assumption mismatch | Full pipeline | Storm (Fix Spec) | Sentinel (regression test) | Shipwright (patch) |
+| Storm consistency — naming only | Shipwright-direct | N/A (canonical form already in Storm report) | N/A (rename doesn't need new test) | Shipwright (rename to canonical form) |
+| Cartographer — data corruption/crash | Full pipeline | Storm (Fix Spec) | Sentinel (regression test) | Shipwright (patch) |
+| Cartographer — medium/low | Backlog | — | — | — |
+| Monkey `Survived: no`, high confidence, has file:line | Full pipeline | Storm (Fix Spec) | Sentinel (regression test) | Shipwright (patch) |
+| Monkey `Survived: no`, low confidence or `[concept]` | Backlog | — | — | — |
+| Any finding marked `Dup of #N` | Skip | — | — | — |
+
+**Two fix routes:**
+
+1. **Full pipeline** (3 agents, sequential) — for findings that need regression tests:
+   - Storm Fix Spec → Sentinel regression test → Shipwright patch
+
+2. **Shipwright-direct** — for mechanical changes that don't need new tests (renames, canonical form normalization):
+   - Shipwright receives the Storm consistency table with canonical forms and applies renames
+   - No new tests needed — existing tests must still pass after rename
+
+**Step 3: Full Fix Pipeline (three agents, sequential).**
 
 If user approves fixes:
 
@@ -383,7 +407,7 @@ If user approves fixes:
 ```markdown
 # Storm Brief (Fix Spec Mode)
 ## Triaged Findings
-[critical/high findings with file:line locations — full Issue text, not truncated]
+[all full-pipeline findings with file:line locations — full Issue text, not truncated]
 ## Values
 [VALUES.md content]
 ```
@@ -418,17 +442,23 @@ Sentinel writes one regression test per fix spec. Each test must fail before the
 
 Shipwright applies minimum patches. Runs full test suite. All tests must pass — old and new.
 
-**Step 4: User gate.** "Fix pipeline patched [N] findings. Here's the diff and new tests. Approve?" If tests fail after fixes: stop, present failures to user. Max 2 fix attempts per finding.
+**Step 4: Shipwright-Direct Fixes (naming/renames).**
 
-**Step 5: Update consolidated report.** Set Status column: Fixed, Unresolved, Backlog, Dup of #N.
+If there are Shipwright-direct findings (naming consistency), launch a Shipwright with:
 
-Also apply (without the pipeline) any remaining fixes:
-- Storm consistency findings (cross-module assumption mismatches before naming)
-- Cartographer findings that would corrupt data or crash at runtime
-- Monkey findings where `Survived: no` and confidence is high
-- Everything else goes to backlog
+```markdown
+# Shipwright Brief (Rename Mode)
+## Renames
+[Storm consistency table: Location, Inconsistency, Canonical Form, Action]
+## Rules
+- Apply each rename exactly as specified in the canonical form column
+- Do not refactor adjacent code
+- Run full test suite after all renames — existing tests must pass
+```
 
-Re-run tests after all fixes.
+**Step 5: User gate.** "Fix pipeline patched [N] findings ([M] via full pipeline, [K] via rename). Here's the diff and new tests. Approve?" If tests fail after fixes: stop, present failures to user. Max 2 fix attempts per finding.
+
+**Step 6: Update consolidated report.** Set Status column: Fixed, Unresolved, Backlog, Dup of #N.
 
 ### 3d: Verify clean
 
@@ -514,6 +544,7 @@ Every decision point that requires user input MUST use the `AskUserQuestion` too
 
 - **Every user gate uses `AskUserQuestion`.** This is how the user knows you need them. No exceptions. If you're waiting for input, use the tool.
 - **Never run TDD and build in the same agent.** This is the single most important rule. Correlated failure is silent and deadly.
+- **The orchestrator NEVER writes code.** Not one line. Not a rename. Not a "quick fix." All code changes go through crew agents via the fix dispatch matrix. The orchestrator triages, dispatches, and presents — it does not edit files. If you catch yourself writing code as the orchestrator, stop. Dispatch it to the correct agent instead.
 - **The Monkey is a real agent.** Launch her with a brief, a context, and expect structured markdown back. She is not inline narrative. She is not optional. She is not decoration.
 - **Always use worktree isolation for parallel agents.** Context quality degrades in shared sessions.
 - **Empty edge case report is valid.** The Cartographer must not hallucinate findings to justify existence.

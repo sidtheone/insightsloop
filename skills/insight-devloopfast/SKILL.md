@@ -206,16 +206,37 @@ After all three agents return and their artifacts are written to disk:
 
 **Location column contract:** Same as devloop — `file.ts:33` for actionable, `[concept]` prefix for conceptual (straight to Backlog).
 
-**Step 2: Filter.** Only findings with confidence 80+ AND severity Critical/High AND actionable location (not `[concept]`) go to the fix pipeline. Everything else → `filtered-findings.md` (below threshold) or Backlog (conceptual/low severity).
+**Step 2: Triage using the fix dispatch matrix (same as devloop).** Additional filter for speed mode: only 80+ confidence findings enter the pipeline. Below-threshold → `filtered-findings.md`.
 
-**Step 3: Fix pipeline** — same three-agent split as devloop:
+### Fix Dispatch Matrix
+
+**The orchestrator NEVER writes, edits, or patches code. All fixes go through crew agents.**
+
+Same matrix as `/insight-devloop`:
+
+| Finding Type | Route | Who Specs | Who Tests | Who Fixes |
+|---|---|---|---|---|
+| Storm critical/high (has file:line, 80+ confidence) | Full pipeline | Storm (Fix Spec) | Sentinel (regression test) | Shipwright (patch) |
+| Storm consistency — assumption mismatch (80+) | Full pipeline | Storm (Fix Spec) | Sentinel (regression test) | Shipwright (patch) |
+| Storm consistency — naming only (80+) | Shipwright-direct | N/A | N/A | Shipwright (rename) |
+| Cartographer — data corruption/crash (80+) | Full pipeline | Storm (Fix Spec) | Sentinel (regression test) | Shipwright (patch) |
+| Monkey `Survived: no`, high confidence, has file:line | Full pipeline | Storm (Fix Spec) | Sentinel (regression test) | Shipwright (patch) |
+| Below 80 confidence | filtered-findings.md | — | — | — |
+| `[concept]` or low severity | Backlog | — | — | — |
+
+**Step 3: Fix pipeline** — same two routes as devloop:
+
+**Full pipeline (3 agents, sequential):**
 1. **Storm Fix Spec Mode** — paste Storm SKILL.md verbatim, write context to `brief-storm-fixspec.md` with triaged findings
 2. **Sentinel regression tests** — paste Sentinel SKILL.md verbatim, write context to `brief-sentinel-fix.md` with fix specs
 3. **Shipwright patches** — paste Shipwright SKILL.md verbatim, write context to `brief-shipwright-fix.md` with fix specs + failing tests
 
+**Shipwright-direct (naming/renames):**
+- Shipwright receives Storm consistency table with canonical forms, applies renames, runs existing tests
+
 User gate: "Fix pipeline patched N findings. Approve?" Max 2 attempts per finding.
 
-**Step 4: Update consolidated report** status column. Also apply (without pipeline) any remaining 80+ confidence fixes: consistency assumption mismatches, data-corruption Cartographer findings.
+**Step 4: Update consolidated report** status column.
 
 ### 3d: Verify clean
 
@@ -265,6 +286,7 @@ Speed mode reduces gates but doesn't eliminate them. The ones that remain are no
 - **Monkey findings use the same filter.** 80+ confidence or it goes to filtered-findings.md. She earns attention the same way the Storm does.
 - **One exception: triage correction.** If the Monkey's Frame finding would change the triage size, act on it even if confidence is below 80. Getting the triage wrong cascades through every step.
 - **Sentinel and Shipwright are never the same agent.**
+- **The orchestrator NEVER writes code.** Not one line. Not a rename. Not a "quick fix." All code changes go through crew agents via the fix dispatch matrix. The orchestrator triages, dispatches, and presents — it does not edit files.
 - **Always use worktree isolation.**
 - **Plan is a hard gate.**
 - **Filtered findings are never deleted.** `filtered-findings.md` survives into the archived run. The user and `/insight-retro` can review it.
