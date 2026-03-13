@@ -57,11 +57,11 @@ Same three rules as `/insight-devloop`:
 Brief naming and discard rules are identical to devloop. All `brief-*.md` files are on the archive discard list.
 
 Also read `.insightsLoop/config.md` for engine tunables if it exists. If it doesn't exist, use these defaults:
-- `monkey_findings_per_step` (default: 1) — applies **per vertical**. If set to 3 with 5 verticals, the Monkey produces 15 findings (3 × 5)
+- `monkey_findings_per_step` (default: 3) — applies **per vertical**. With 5 verticals, the Monkey produces 15 findings (3 × 5)
 - `confidence_threshold` (default: 80) — filtering cutoff for Storm, Cartographer, and Monkey findings
 - `theme` (default: none) — immersive crew theme
 
-**Monkey brief template:** Use the same template as devloop at `.claude/skills/insight-devloop/reference/monkey-brief-template.md`. `monkey_findings_per_step` applies per vertical — if set to 3, tell the Monkey: "Produce 3 findings per vertical, each using a different technique."
+**Monkey brief template:** Use the same template as devloop at `.claude/skills/insight-devloop/reference/monkey-brief-template.md`. `monkey_findings_per_step` applies per vertical (default: 3). Tell the Monkey: "Produce {N} findings per vertical, each using a different technique."
 
 **Theme loading:** Same as devloop — if `config.md` has a theme set (not `none`), load `.insightsLoop/themes/{setting}.md`. See devloop SKILL.md "Theme Loading" section for the full rules and the themed/never-themed boundary. Key points:
 - Orchestrator voice is MANDATORY — print themed status messages at every step transition

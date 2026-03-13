@@ -21,7 +21,7 @@ Previous Monkey findings this run: [PREVIOUS_FINDINGS_SUMMARY]. Pick a different
 | frame | the plan and the frame | Assumption Flip, Scale Shift, Existence Question, Cross-Seam Probe | Challenge the plan across all selected verticals (Architecture, Data, Security, Integration, Operational). [N] findings per vertical. |
 | build | the merged diff, storm-report.md, edge-cases.md, and storm-tdd.md | All techniques — match to vertical | Find what Storm and Cartographer MISSED across all selected verticals. [N] findings per vertical. |
 
-**[N]** = `monkey_findings_per_step` from config (default: 1). This applies **per vertical**, not per step. If config says 3 and 5 verticals are selected, the Monkey produces 15 findings total (3 × 5).
+**[N]** = `monkey_findings_per_step` from config (default: 3). This applies **per vertical**, not per step. With 5 verticals selected, the Monkey produces 15 findings total (3 × 5). Each finding uses a different technique within the same vertical.
 
 ## Verticals Reference
 

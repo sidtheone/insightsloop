@@ -56,11 +56,11 @@ Three rules govern all crew invocations:
 - All `brief-*.md` files are on the archive **discard list** (ephemeral context, not artifacts)
 
 Also read `.insightsLoop/config.md` for engine tunables if it exists. If it doesn't exist, use these defaults:
-- `monkey_findings_per_step` (default: 1) — how many findings the Monkey produces **per vertical**. If set to 3 with 5 verticals, the Monkey produces 15 findings total (3 × 5). Each finding gets its own Technique/Target/Confidence/Survived block.
+- `monkey_findings_per_step` (default: 3) — how many findings the Monkey produces **per vertical**. With 5 verticals selected, the Monkey produces 15 findings total (3 × 5). Each finding gets its own Technique/Target/Confidence/Survived block.
 - `confidence_threshold` — used by devloopfast only (default: 80)
 - `theme` (default: none) — immersive crew theme. See below.
 
-**When constructing Monkey briefs:** `monkey_findings_per_step` applies per vertical. If set to 3, tell the Monkey: "Produce 3 findings per vertical, each using a different technique." The templates below assume the default (1 per vertical). Modify them based on config.
+**When constructing Monkey briefs:** `monkey_findings_per_step` applies per vertical (default: 3). Tell the Monkey: "Produce {N} findings per vertical, each using a different technique." The brief template uses `[N]` as a placeholder — substitute with the config value.
 
 ### Theme Loading
 
@@ -217,7 +217,7 @@ The Frame Monkey challenges the **plan** across all relevant verticals before an
 - Always run Architecture and Integration
 - When in doubt, include all 5
 
-Include the selected verticals in the Monkey's brief so she produces `monkey_findings_per_step` findings per vertical (default: 1). If config says 3 and 5 verticals are selected, she produces 15 findings. Each finding gets its own Technique/Target/Confidence/Survived block.
+Include the selected verticals in the Monkey's brief so she produces `monkey_findings_per_step` findings per vertical (default: 3). With 5 verticals selected, she produces 15 findings. Each finding gets its own Technique/Target/Confidence/Survived block.
 
 **Dedup with Plan Monkey:** If `.insightsLoop/current/monkey-plan.md` exists (written by the Navigator during `/insight-plan`), read it and include its finding in the "Previous Monkey findings this run" field. The Frame Monkey should not repeat what the Plan Monkey already challenged.
 
@@ -414,7 +414,7 @@ Construct her brief using the template in `.claude/skills/insight-devloop/refere
 ## Values
 [VALUES.md content if exists, else "None"]
 ## Challenge
-Produce {monkey_findings_per_step} findings per selected vertical (default: 1). For each vertical, find what Storm and Cartographer MISSED. They already covered their ground — your job is to find the gap in their analysis, not repeat it. Each finding gets its own Technique/Target/Confidence/Survived block.
+Produce {monkey_findings_per_step} findings per selected vertical (default: 3). For each vertical, find what Storm and Cartographer MISSED. They already covered their ground — your job is to find the gap in their analysis, not repeat it. Each finding gets its own Technique/Target/Confidence/Survived block.
 ```
 
 Output: `.insightsLoop/current/monkey-build.md`
