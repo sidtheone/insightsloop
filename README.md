@@ -1,4 +1,4 @@
-# InsightsLoop (beta 0.6)
+# InsightsLoop (beta 0.7)
 
 An opinionated dev engine for human+AI teams. 10 skills, 8 personas, one pipeline. Now with calibrated chaos.
 

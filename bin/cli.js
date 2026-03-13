@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const readline = require("readline");
 
 const SKILLS = [
   "insight-plan",
@@ -26,7 +27,19 @@ const DEFAULT_CONFIG = `## Theme
 - threshold: 80
 `;
 
+const THEMES = ["pirate", "space", "naval", "none"];
+
 const pkg = require("../package.json");
+
+function ask(question) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim().toLowerCase());
+    });
+  });
+}
 
 function copyDirSync(src, dest) {
   fs.mkdirSync(dest, { recursive: true });
@@ -41,7 +54,7 @@ function copyDirSync(src, dest) {
   }
 }
 
-function init(args) {
+async function init(args) {
   const cwd = process.cwd();
   const skillsDir = path.join(cwd, ".claude", "skills");
   const loopDir = path.join(cwd, ".insightsLoop");
@@ -89,9 +102,34 @@ function init(args) {
 
   // Create insight-config (don't overwrite existing)
   if (!fs.existsSync(configPath)) {
+    const themeFlag = args.find((a) => a.startsWith("--theme="));
+    let theme = "pirate";
+
+    if (themeFlag) {
+      const requested = themeFlag.split("=")[1].trim().toLowerCase();
+      if (THEMES.includes(requested)) {
+        theme = requested;
+      } else {
+        console.error(`  Unknown theme: ${requested}. Available: ${THEMES.join(", ")}`);
+        process.exit(1);
+      }
+    } else {
+      console.log("\n  Available themes:");
+      console.log("    1. pirate  — salt, timber, articles of agreement");
+      console.log("    2. space   — vacuum, conduits, mission protocols");
+      console.log("    3. naval   — discipline, welds, rules of engagement");
+      console.log("    4. none    — no roleplay, default mechanics only\n");
+
+      const answer = await ask("  Choose a theme [1-4, default: 1]: ");
+      if (answer === "2" || answer === "space") theme = "space";
+      else if (answer === "3" || answer === "naval") theme = "naval";
+      else if (answer === "4" || answer === "none") theme = "none";
+    }
+
+    const config = DEFAULT_CONFIG.replace("- setting: pirate", `- setting: ${theme}`);
     fs.mkdirSync(loopDir, { recursive: true });
-    fs.writeFileSync(configPath, DEFAULT_CONFIG);
-    console.log("  insight-config → .insightsLoop/config.md (theme: pirate)");
+    fs.writeFileSync(configPath, config);
+    console.log(`  insight-config → .insightsLoop/config.md (theme: ${theme})`);
   } else {
     console.log("  insight-config → exists, skipped");
   }
@@ -156,7 +194,7 @@ console.log(`\n  insightsloop v${pkg.version}\n`);
 
 switch (command) {
   case "init":
-    init(args);
+    init(args).catch((e) => { console.error(e); process.exit(1); });
     break;
   case "update":
     update();
@@ -168,8 +206,9 @@ switch (command) {
     break;
   default:
     console.log("Usage:");
-    console.log("  npx insightsloop init                    Install all skills + themes + config");
+    console.log("  npx insightsloop init                              Install all skills + themes + config");
     console.log("  npx insightsloop init --skills=plan,monkey,storm   Install selected skills only");
+    console.log("  npx insightsloop init --theme=space                Skip theme prompt, use specified theme");
     console.log("  npx insightsloop update                  Update skills (preserves config)");
     console.log("  npx insightsloop version                 Show version");
     console.log("");
