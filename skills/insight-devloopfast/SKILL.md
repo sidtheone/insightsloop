@@ -144,9 +144,11 @@ If `Survived: no`, log to `filtered-findings.md`. Proceed to merge regardless �
 
 Same as `/insight-devloop`. Conflicts still stop the loop and go to the user.
 
-### 3b: Verify (parallel, confidence-filtered)
+### 3b: Verify + Converge (confidence-filtered)
 
-Two agents run in parallel:
+**Three agents run on the merged diff. Storm and Cartographer run in parallel first, then the Ship Monkey runs after both return. Then converge and present.**
+
+#### Storm + Cartographer (parallel)
 
 **The Storm (Opus)**: Read the Storm's SKILL.md at `.claude/skills/insight-storm/SKILL.md`, paste verbatim. Write context to `.insightsLoop/current/brief-storm-verify.md` per devloop Step 3b. Add one instruction to the brief: "For each finding, assign a confidence score (0-100) based on how certain you are this is a real issue, not a theoretical concern. Add a Confidence column to all tables." The Storm handles both adversarial review and consistency in a single pass.
 
@@ -168,19 +170,35 @@ Storm output: `.insightsLoop/current/storm-report.md`:
 
 Cartographer output: `.insightsLoop/current/edge-cases.md` — same format with Confidence column.
 
-**Filtering:**
+**Filtering (applied during convergence, not here):**
 - Findings with confidence 80+ → shown to user, fixed if critical/high
 - Findings with confidence <80 → appended to `.insightsLoop/current/filtered-findings.md`
 - Empty reports remain valid
 - Borderline (threshold-5 to threshold-1): round up, show it. Better to over-surface than to miss.
 
-### The Monkey at Ship
+#### Ship Monkey (after Storm + Cartographer)
+
+**Do not skip. Do not proceed to convergence without running the Ship Monkey.**
 
 Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal, step-specific technique recommendations (Time Travel, Scale Shift, Hostile Input), and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-ship.md`.
 
 **IMPORTANT: Write `monkey-ship.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
 Her finding goes through the same 80+ confidence filter. No special treatment. She earns attention like everyone else.
+
+#### Converge and Present
+
+**This is a hard gate even in speed mode. Do not proceed to 3c without completing this.**
+
+After all three agents return and their artifacts are written to disk:
+
+1. Apply confidence filtering: 80+ findings surfaced, below-threshold → `filtered-findings.md`
+2. Present a summary of ALL surfaced findings to the user:
+   - Storm: [N] findings above threshold ([severity breakdown])
+   - Cartographer: [N] findings above threshold (or "skipped — visual only")
+   - Ship Monkey: [technique used], Survived: [yes/no], Confidence: [score], [surfaced/filtered]
+   - Filtered: [N] total findings sent to filtered-findings.md
+3. Use `AskUserQuestion`: "Verify step complete. [N] findings surfaced, [M] filtered. Proceed to consolidate and fix?" Options: "Proceed to fix pipeline / Discuss findings first / Stop — need to rethink"
 
 ### 3c: Consolidate + Fix Pipeline (Confidence-Filtered)
 
@@ -233,7 +251,7 @@ Speed mode reduces gates but doesn't eliminate them. The ones that remain are no
 | Step 1: Frame (architectural only) | Approve triage and scope | Approve / Adjust / Abort |
 | Step 1: Monkey would change triage | Monkey says the size is wrong | Re-triage / Override / Abort |
 | Step 3a: Merge conflict | Files overlap between worktrees | Show both versions, user picks |
-| Step 3b: 80+ confidence findings | Present filtered findings before fixing | Fix listed / Skip to backlog / Discuss |
+| Step 3b: Converge (after Storm + Cartographer + Ship Monkey) | Present all surfaced findings before fix pipeline | Proceed to fix pipeline / Discuss findings first / Stop |
 | Step 3d: After fixes + verify clean | Confirm shippable before archive | Ship / Fix more / Abort |
 
 **Not gated in speed mode** (auto-proceed, logged):

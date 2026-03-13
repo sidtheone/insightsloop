@@ -287,9 +287,11 @@ Merge all completed worktrees into the main branch. For each worktree:
 
 If merge fails, stop and ask the user. Do not silently discard changes.
 
-### 3b: Verify (parallel)
+### 3b: Verify + Converge
 
-Two agents run in parallel on the merged diff:
+**Three agents run on the merged diff. Storm and Cartographer run in parallel first, then the Ship Monkey runs after both return.**
+
+#### Storm + Cartographer (parallel)
 
 **The Storm — Adversarial Review + Consistency (Opus)**:
 
@@ -309,7 +311,7 @@ The Storm runs both passes in a single invocation — adversarial review first, 
 
 Output: `.insightsLoop/current/storm-report.md` (format defined in Storm's SKILL.md — includes Introduced Issues, Consistency, and Pre-existing Issues sections)
 
-**IMPORTANT: Write `storm-report.md` immediately.** When the Storm agent returns, write its findings to `.insightsLoop/current/storm-report.md` before proceeding. Do not proceed to Fix until the file exists on disk. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
+**IMPORTANT: Write `storm-report.md` immediately.** When the Storm agent returns, write its findings to `.insightsLoop/current/storm-report.md` before proceeding. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
 **The Cartographer — Edge Case Hunter (Sonnet)** — invoke `/insight-edge-case-hunter` as the actual skill (use the Skill tool, not a general-purpose agent). Pass the merged diff as input. The Cartographer's SKILL.md defines her method and output format — do not paraphrase or substitute with an ad-hoc brief.
 
@@ -319,9 +321,9 @@ Output: `.insightsLoop/current/edge-cases.md` — empty report (header only, no 
 
 **IMPORTANT: Write `edge-cases.md` immediately.** When the Cartographer returns, write its findings to `.insightsLoop/current/edge-cases.md` before proceeding. Agent output alone is not persistent.
 
-### The Monkey at Ship
+#### Ship Monkey (after Storm + Cartographer)
 
-**Do not skip.** Ship Monkey runs AFTER fixes are applied and tests pass, before writing summary.md. If Storm/Cartographer/fixes consumed your attention, the Ship Monkey is still required. It is the last chaos check before archive.
+**Do not skip. Do not proceed to 3c without running the Ship Monkey.**
 
 Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=ship. Context: merged diff + storm-report.md + edge-cases.md.
 
@@ -329,7 +331,19 @@ Output: `.insightsLoop/current/monkey-ship.md`
 
 **IMPORTANT: Write `monkey-ship.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
 
-If `Survived: no` and confidence is high, treat it like a Storm finding and fix it. Present all Monkey findings to the user regardless.
+#### Converge and Present
+
+**This is a hard gate. Do not proceed to 3c without completing this.**
+
+After all three agents return (Storm, Cartographer, Ship Monkey) and their artifacts are written to disk:
+
+1. Present a summary of ALL findings from this step to the user:
+   - Storm: [N] introduced issues ([severity breakdown]), [N] consistency findings
+   - Cartographer: [N] edge cases (or "skipped — visual only")
+   - Ship Monkey: [technique used], Survived: [yes/no], Confidence: [score]
+2. Use `AskUserQuestion`: "Verify step complete. Storm found [N] issues, Cartographer found [N] edge cases, Monkey [survived/didn't survive]. Proceed to consolidate and fix?" Options: "Proceed to fix pipeline / Discuss findings first / Stop — need to rethink"
+
+**Why this gate exists:** Without it, the orchestrator runs Storm + Cartographer + Monkey and silently moves into the fix pipeline. The user never sees the findings before fixes start. This gate ensures the crew's analysis is visible and the user can redirect before auto-fixing begins.
 
 ### 3c: Consolidate + Fix Pipeline
 
@@ -493,7 +507,7 @@ Every decision point that requires user input MUST use the `AskUserQuestion` too
 | Step 2a: Monkey `Survived: no` | Monkey challenged the tests — user decides | Add test / Ignore / Rethink |
 | Step 2b: Monkey `Survived: no` | Monkey challenged the build — user decides before merge | Investigate / Proceed / Stop |
 | Step 3a: Merge conflict | Files overlap between worktrees | Show both versions, user picks |
-| Step 3b: After Storm + Cartographer | Present findings before fixing | Fix listed / Skip to backlog / Discuss |
+| Step 3b: Converge (after Storm + Cartographer + Ship Monkey) | Present all findings before fix pipeline | Proceed to fix pipeline / Discuss findings first / Stop |
 | Step 3d: After fixes + verify clean | Confirm shippable before archive | Ship / Fix more / Abort |
 
 ## Rules
