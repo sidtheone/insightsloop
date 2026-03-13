@@ -268,19 +268,9 @@ Read the Shipwright's SKILL.md at `.claude/skills/insight-shipwright/SKILL.md`. 
 
 Independent tasks run in parallel. Dependent tasks run sequentially.
 
-### The Monkey at Build
-
-Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=build. Context: summary of what each worktree built + file lists. Use the single-worktree variant from the template if frame.md shows one Shipwright.
-
-Output: `.insightsLoop/current/monkey-build.md`
-
-**IMPORTANT: Write `monkey-build.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
-
-If `Survived: no`, use `AskUserQuestion`: "Monkey found a build seam issue: [finding summary]. Investigate before merge?" Options: "Investigate / Proceed anyway / Stop"
-
-If investigate: **dispatch to the Storm** — invoke her in Verify Mode on the specific seam the Monkey identified (the files/modules where the assumption mismatch lives). Storm reports back. If Storm confirms the issue, it enters the consolidated findings and goes through the fix dispatch matrix at Ship. The orchestrator does NOT fix the seam itself.
-
 **Output artifact**: Passing implementations in worktrees.
+
+**Note:** The Build Monkey no longer runs here. Monkeys run after Storm + Cartographer in Step 3b, with full analysis context. See "Build Monkeys (parallel verticals)" below.
 
 ## Step 3: Ship
 
@@ -331,29 +321,71 @@ Output: `.insightsLoop/current/edge-cases.md` — empty report (header only, no 
 
 **IMPORTANT: Write `edge-cases.md` immediately.** When the Cartographer returns, write its findings to `.insightsLoop/current/edge-cases.md` before proceeding. Agent output alone is not persistent.
 
-#### Ship Monkey (after Storm + Cartographer)
+#### Build Monkeys (parallel verticals — after Storm + Cartographer)
 
-**Do not skip. Do not proceed to 3c without running the Ship Monkey.**
+**Do not skip. Do not proceed to convergence without running the Build Monkeys.**
 
-Launch the Monkey agent (Opus). Construct her brief using the template in `.claude/skills/insight-devloop/reference/monkey-brief-template.md` with step=ship. Context: merged diff + storm-report.md + edge-cases.md.
+Launch multiple Monkey agents **in parallel**, each attacking a different vertical of the merged code. Every Monkey receives the same shared context (merged diff + storm-report.md + edge-cases.md) but a different lens.
 
-Output: `.insightsLoop/current/monkey-ship.md`
+**Verticals:**
 
-**IMPORTANT: Write `monkey-ship.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
+| Vertical | Lens | Best Techniques |
+|---|---|---|
+| **Architecture** | Coupling, abstractions, dependency direction, YAGNI violations, unnecessary layers | Existence Question, Assumption Flip, Delete Probe |
+| **Data** | Queries, N+1, missing indexes, partial state, transactions, data integrity, migration safety | Scale Shift, Time Travel, Hostile Input |
+| **Security** | Auth gaps, injection vectors, input validation, rate limiting, secrets exposure, privilege escalation | Hostile Input, Assumption Flip, Requirement Inversion |
+| **Integration** | Cross-module seams, naming mismatches, assumption conflicts between components, API contract drift | Cross-Seam Probe, Assumption Flip, Scale Shift |
+| **Operational** | What breaks at 3am, monitoring gaps, failure recovery, deploy safety, config drift | Time Travel, Scale Shift, Requirement Inversion |
+
+Each Monkey gets a brief:
+
+```markdown
+# Monkey Brief (Build — [Vertical])
+## Vertical
+[vertical name] — [lens description]
+## Recommended Techniques
+[from table above]
+## Merged Diff
+[full merged diff]
+## Storm Report
+[storm-report.md content — what Storm already found, so the Monkey doesn't repeat it]
+## Edge Cases
+[edge-cases.md content — what Cartographer already found]
+## Previous Monkey Findings
+[summaries of monkey-frame.md and monkey-tdd.md]
+## Values
+[VALUES.md content if exists, else "None"]
+## Challenge
+Find what Storm and Cartographer MISSED in this vertical. They already covered their ground — your job is to find the gap in their analysis, not repeat it.
+```
+
+Output: `.insightsLoop/current/monkey-build-arch.md`, `monkey-build-data.md`, `monkey-build-security.md`, `monkey-build-integration.md`, `monkey-build-ops.md`
+
+**IMPORTANT: Write each monkey file immediately** after each agent returns. Agent output alone is not persistent.
+
+**Vertical selection:** Not all verticals apply to every story. The orchestrator selects relevant verticals based on the plan:
+- Pure UI story → skip Data, Security (unless auth-related)
+- API-only story → skip Operational (unless deployment changes)
+- Always run Architecture and Integration
+- When in doubt, run all 5 — the Monkey's `Survived: yes` is a valid answer
+
+**Config:** `monkey_findings_per_step` from config.md applies per vertical. If set to 3, each vertical Monkey produces 3 findings = up to 15 total findings across 5 verticals.
+
+**Monkey findings dispatch:** If any Monkey `Survived: no` with high confidence and actionable file:line, the finding enters the consolidated findings and goes through the fix dispatch matrix. The orchestrator does NOT fix it.
 
 #### Converge and Present
 
 **This is a hard gate. Do not proceed to 3c without completing this.**
 
-After all three agents return (Storm, Cartographer, Ship Monkey) and their artifacts are written to disk:
+After all agents return (Storm, Cartographer, all Build Monkeys) and their artifacts are written to disk:
 
-1. Present a summary of ALL findings from this step to the user:
+1. Present a summary of ALL findings to the user:
    - Storm: [N] introduced issues ([severity breakdown]), [N] consistency findings
    - Cartographer: [N] edge cases (or "skipped — visual only")
-   - Ship Monkey: [technique used], Survived: [yes/no], Confidence: [score]
-2. Use `AskUserQuestion`: "Verify step complete. Storm found [N] issues, Cartographer found [N] edge cases, Monkey [survived/didn't survive]. Proceed to consolidate and fix?" Options: "Proceed to fix pipeline / Discuss findings first / Stop — need to rethink"
+   - Build Monkeys: [N] findings across [M] verticals, [X] survived, [Y] didn't
+2. Use `AskUserQuestion`: "Verify step complete. Storm: [N] issues. Cartographer: [N] edge cases. Monkeys: [N] findings across [M] verticals. Proceed to consolidate and fix?" Options: "Proceed to fix pipeline / Discuss findings first / Stop — need to rethink"
 
-**Why this gate exists:** Without it, the orchestrator runs Storm + Cartographer + Monkey and silently moves into the fix pipeline. The user never sees the findings before fixes start. This gate ensures the crew's analysis is visible and the user can redirect before auto-fixing begins.
+**Why this gate exists:** Without it, the orchestrator runs all agents and silently moves into the fix pipeline. The user never sees the findings before fixes start. This gate ensures the crew's analysis is visible and the user can redirect before auto-fixing begins.
 
 ### 3c: Consolidate + Fix Pipeline
 
@@ -392,8 +424,8 @@ The Monkey runs at every step. When she finds something (`Survived: no`), the ri
 |---|---|---|---|
 | Frame | Scope/triage challenge | Orchestrator (frame.md is not code) | Adjust triage label or parallelization plan |
 | TDD | Test blind spot | **Sentinel** (re-invoke) | Write the missing test contract |
-| Build | Integration seam / assumption mismatch | **Storm** (invoke on seam) | Verify the seam, report finding for fix pipeline |
-| Ship | Operational edge case | Enters consolidated findings | Goes through fix dispatch matrix below |
+| Build (5 verticals) | Any finding with file:line | Enters consolidated findings | Goes through fix dispatch matrix below |
+| Build (5 verticals) | Conceptual finding | Backlog | Logged, not auto-fixed |
 
 ### Fix Dispatch Matrix
 

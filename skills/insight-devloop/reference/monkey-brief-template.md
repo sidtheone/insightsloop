@@ -20,16 +20,14 @@ Previous Monkey findings this run: [PREVIOUS_FINDINGS_SUMMARY]. Pick a different
 |------|---------------------|------------------------|-------------------------|
 | frame | the plan and the frame | Assumption Flip, Scale Shift, Existence Question | Challenge the triage decision or scope boundaries |
 | tdd | the test suite the Sentinel just wrote and the plan | Hostile Input, Requirement Inversion, Delete Probe | Find the test suite's blind spot |
-| build (multi-worktree) | what each Shipwright built | Cross-Seam Probe, Time Travel, Scale Shift | Find where two worktrees made different assumptions about a shared concept |
-| build (single-worktree) | what the Shipwright built and the plan | Assumption Flip, Delete Probe, Requirement Inversion | Find where the implementation diverges from the plan's intent |
-| ship | the merged diff, the Storm's report, and the Cartographer's map | Time Travel, Scale Shift, Hostile Input | Find the operational edge case that works in tests but fails at 3am |
+
+**Build step uses vertical briefs instead of this template.** See devloop SKILL.md Step 3b "Build Monkeys (parallel verticals)" for the vertical-specific brief format. Each vertical Monkey gets: merged diff + storm-report + edge-cases + its own lens and recommended techniques.
 
 ## Previous Findings Accumulation
 
 - frame: "None — first step."
 - tdd: "[1-line summary of monkey-frame.md finding]"
-- build: "[1-line summary of monkey-frame.md and monkey-tdd.md findings]"
-- ship: "[1-line summary of monkey-frame.md, monkey-tdd.md, and monkey-build.md findings]"
+- build verticals: "[1-line summary of monkey-frame.md and monkey-tdd.md findings]" (shared across all verticals)
 
 ## Output
 

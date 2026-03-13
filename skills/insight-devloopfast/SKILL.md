@@ -130,13 +130,7 @@ If `Survived: no` and the finding is a concrete test case (not abstract): **disp
 
 Same as `/insight-devloop`. Read the Shipwright's SKILL.md, paste verbatim. Write context to `.insightsLoop/current/brief-shipwright.md` per devloop Step 2b.
 
-### The Monkey at Build
-
-Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal, step-specific technique recommendations (Cross-Seam Probe, Time Travel, Scale Shift), and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-build.md`.
-
-**IMPORTANT: Write `monkey-build.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the next Monkey loses dedup context and the archive loses the artifact.
-
-If `Survived: no` and confidence is high: **dispatch to the Storm** — invoke her on the specific seam. Storm reports back; if confirmed, the finding enters consolidated findings for the fix pipeline. If low confidence, log to `filtered-findings.md`. Proceed to merge regardless — but if the finding specifically identifies a naming mismatch between worktrees, flag it for the merge step so it gets resolved there.
+**Note:** Build Monkeys no longer run here. They run after Storm + Cartographer in Step 3b as parallel verticals. See below.
 
 ## Step 3: Ship (Filtered)
 
@@ -176,27 +170,29 @@ Cartographer output: `.insightsLoop/current/edge-cases.md` — same format with 
 - Empty reports remain valid
 - Borderline (threshold-5 to threshold-1): round up, show it. Better to over-surface than to miss.
 
-#### Ship Monkey (after Storm + Cartographer)
+#### Build Monkeys (parallel verticals — after Storm + Cartographer)
 
-**Do not skip. Do not proceed to convergence without running the Ship Monkey.**
+Same as `/insight-devloop` — multiple Monkeys in parallel, each attacking a different vertical (Architecture, Data, Security, Integration, Operational). Each receives: merged diff + storm-report + edge-cases + vertical-specific lens.
 
-Launch the Monkey agent (Opus). Same brief as `/insight-devloop` — with full arsenal, step-specific technique recommendations (Time Travel, Scale Shift, Hostile Input), and previous Monkey findings accumulation. She produces `.insightsLoop/current/monkey-ship.md`.
+Output: `monkey-build-arch.md`, `monkey-build-data.md`, `monkey-build-security.md`, `monkey-build-integration.md`, `monkey-build-ops.md`
 
-**IMPORTANT: Write `monkey-ship.md` immediately** after the Monkey agent returns. Agent output alone is not persistent — if you don't write the file, the archive loses the artifact.
+**IMPORTANT: Write each monkey file immediately** after each agent returns.
 
-Her finding goes through the same 80+ confidence filter. No special treatment. She earns attention like everyone else.
+**Vertical selection:** Same as devloop — skip irrelevant verticals based on plan. Always run Architecture and Integration.
+
+**Confidence filter applies per finding:** 80+ surfaced, below-threshold → `filtered-findings.md`. Findings with `Survived: no`, high confidence, and actionable file:line enter consolidated findings for fix pipeline.
 
 #### Converge and Present
 
 **This is a hard gate even in speed mode. Do not proceed to 3c without completing this.**
 
-After all three agents return and their artifacts are written to disk:
+After all agents return (Storm, Cartographer, all Build Monkeys) and their artifacts are written to disk:
 
 1. Apply confidence filtering: 80+ findings surfaced, below-threshold → `filtered-findings.md`
 2. Present a summary of ALL surfaced findings to the user:
    - Storm: [N] findings above threshold ([severity breakdown])
    - Cartographer: [N] findings above threshold (or "skipped — visual only")
-   - Ship Monkey: [technique used], Survived: [yes/no], Confidence: [score], [surfaced/filtered]
+   - Build Monkeys: [N] findings across [M] verticals, [X] surfaced, [Y] filtered
    - Filtered: [N] total findings sent to filtered-findings.md
 3. Use `AskUserQuestion`: "Verify step complete. [N] findings surfaced, [M] filtered. Proceed to consolidate and fix?" Options: "Proceed to fix pipeline / Discuss findings first / Stop — need to rethink"
 
@@ -216,8 +212,8 @@ Same as devloop — Monkey findings are dispatched to the right crew member, not
 |---|---|---|---|
 | Frame | Scope/triage challenge | Orchestrator (frame.md is not code) | Auto if doesn't change triage, gate if it does |
 | TDD | Test blind spot | **Sentinel** (re-invoke) | Auto-dispatch, no user gate |
-| Build | Integration seam | **Storm** (invoke on seam) | Only if high confidence, else filtered |
-| Ship | Operational edge case | Consolidated findings | Goes through fix dispatch matrix below |
+| Build (5 verticals) | Any finding with file:line, 80+ confidence | Enters consolidated findings | Goes through fix dispatch matrix below |
+| Build (5 verticals) | Below 80 confidence or conceptual | `filtered-findings.md` / Backlog | Logged, not auto-fixed |
 
 ### Fix Dispatch Matrix
 
