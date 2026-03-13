@@ -63,7 +63,11 @@ Also read `.insightsLoop/config.md` for engine tunables if it exists. If it does
 
 **Monkey brief template:** Use the same template as devloop at `.claude/skills/insight-devloop/reference/monkey-brief-template.md`. If `monkey_findings_per_step` > 1, replace "Pick one technique" with "Produce {N} findings, each using a different technique."
 
-**Theme loading:** Same as devloop — if `config.md` has a theme set (not `none`), load `.insightsLoop/themes/{setting}.md` and apply persona openers, step names, orchestrator voice, artifact headers, and vocabulary substitutions. See devloop SKILL.md "Theme Loading" section for full rules. Theme is voice only — never changes file paths, technique names, severity levels, or functional logic.
+**Theme loading:** Same as devloop — if `config.md` has a theme set (not `none`), load `.insightsLoop/themes/{setting}.md`. See devloop SKILL.md "Theme Loading" section for the full rules and the themed/never-themed boundary. Key points:
+- Orchestrator voice is MANDATORY — print themed status messages at every step transition
+- Artifact headers get themed, artifact content stays plain
+- Crew output is never themed — findings tables, severity, confidence are always parseable
+- The ship speaks themed, the crew speaks plain
 
 ## Artifact Directory
 

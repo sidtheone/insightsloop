@@ -64,17 +64,25 @@ Also read `.insightsLoop/config.md` for engine tunables if it exists. If it does
 
 ### Theme Loading
 
-If `config.md` has `setting:` under `## Theme` and it's not `none`, load `.insightsLoop/themes/{setting}.md`. This file defines:
+If `config.md` has `setting:` under `## Theme` and it's not `none`, load `.insightsLoop/themes/{setting}.md`. If the theme file doesn't exist, fall back to `none` (no theme) and warn the user.
 
-1. **Persona Openers** — prepend the themed opener to each persona's brief, before their SKILL.md content. The opener sets the scene; the SKILL.md personality takes over after.
-2. **Step Names** — use themed step names in status messages and artifact headers (e.g., "Frame" → "Chart Course" for pirate theme).
-3. **Orchestrator Voice** — use themed status messages between steps instead of plain status updates. Print these as regular text output so the user sees them.
-4. **Artifact Headers** — use themed headers when writing artifact files (e.g., "# Storm Report" → "# Hull Inspection Log").
-5. **Vocabulary** — substitute themed terms in orchestrator messages and artifact prose. Never substitute in: file paths, technique names, severity levels, confidence scores, or rule text.
+**What gets themed (the ship speaks themed):**
 
-If the theme file doesn't exist, fall back to `none` (no theme) and warn the user.
+1. **Orchestrator voice — MANDATORY.** You MUST print the themed status message before each step transition. This is how the user knows the crew is alive. Every moment in the theme's Orchestrator Voice table has a corresponding message — print it. If a moment isn't in the table, write one in the theme's voice. This is not optional decoration — it IS the experience.
+2. **Step names** — use themed step names in status messages (e.g., "Frame" → "Chart Course" for pirate theme).
+3. **Artifact headers** — use themed headers when writing artifact files (e.g., `# Storm Report` → `# Hull Inspection Log`). Cosmetic only — the header changes, the content doesn't.
+4. **Persona openers** — prepend the themed opener to each persona's brief, before their SKILL.md content. The opener sets the scene; the SKILL.md personality takes over after.
+5. **Vocabulary in orchestrator prose** — substitute themed terms in orchestrator messages between steps. "Run" → "Voyage", "Finding" → "Discovery", etc. per the theme's Vocabulary table.
 
-**Theme does NOT change:** file paths, Monkey technique names, severity levels (critical/high/medium/low), confidence scores, SKILL.md rules or methods, user gate behavior, or any functional logic. Theme is voice and setting only.
+**What NEVER gets themed (the crew speaks plain):**
+
+- **Crew output** — Monkey findings, Storm reports, Cartographer tables, Sentinel tests, Shipwright code. Always structured, always parseable. No themed vocabulary in findings tables, severity columns, confidence scores, file:line references, or technique names.
+- **Brief instructions** — the context written to `brief-*.md` files is always plain English. The crew needs clear orders, not flavor text.
+- **Artifact content** — the body of `storm-report.md`, `edge-cases.md`, `findings-consolidated.md`, `monkey-*.md` is always clean data. Only the `#` header line changes.
+- **User gates** — `AskUserQuestion` text is always plain. The user needs to understand what they're approving.
+- **File paths, SKILL.md rules, functional logic** — never themed.
+
+**The principle:** The ship speaks themed. The crew speaks plain. Immersion comes from the world around the work, not from the work itself.
 
 ## Artifact Directory
 
